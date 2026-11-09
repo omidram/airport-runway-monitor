@@ -1,0 +1,2597 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#10161d">
+<title>سامانه پایش و ایمنی باند</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect fill='%2310161d' width='32' height='32' rx='6'/%3E%3Cpath stroke='%23e0b15a' stroke-width='2' d='M6 16h20M8 12h16M8 20h16'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0c1117;
+  --text: #e7eef6;
+  --muted: #93a4b5;
+  --line: rgba(186, 210, 230, .14);
+  --line-strong: rgba(186, 210, 230, .28);
+  --brass: #e0b15a;
+  --ok: #3ecf8e;
+  --warn: #f0b429;
+  --crit: #ff5d5d;
+  --info: #7ec8e3;
+  --panel: #141b24;
+  --panel-2: #10161d;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: "Vazirmatn", "Segoe UI", Tahoma, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  background:
+    radial-gradient(1200px 420px at 50% -10%, rgba(126, 200, 227, .08), transparent 55%),
+    var(--bg);
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+img { max-width: 100%; display: block; }
+h2, h3 { font-weight: 600; }
+h2 { margin: 0; font-size: 16px; }
+h3 { margin: 0 0 8px; font-size: 13px; }
+[hidden] { display: none !important; }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+::selection { background: rgba(224, 177, 90, .35); }
+* { scrollbar-width: thin; scrollbar-color: #2c3a4a transparent; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
+.muted { color: var(--muted); font-size: 12px; }
+.app { height: 100%; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; }
+.appbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px; background: var(--panel-2);
+  border-bottom: 1px solid var(--line); box-shadow: inset 0 2px 0 var(--brass);
+}
+.brand { display: flex; align-items: center; gap: 10px; min-width: 220px; }
+.mark {
+  width: 36px; height: 36px; border-radius: 9px; background: #1a222d;
+  border: 1px solid rgba(224, 177, 90, .5); position: relative; flex: none;
+}
+.mark:before {
+  content: ""; position: absolute; left: 8px; right: 8px; top: 17px; height: 2px; background: var(--brass);
+  box-shadow: 0 -6px 0 var(--info), 0 6px 0 var(--info);
+}
+.brand strong { display: block; font-size: 14px; }
+.brand small { color: var(--muted); font-size: 11px; }
+.head-actions, .clocks { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.clocks { display: grid; justify-items: start; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.clocks strong { color: var(--text); font-size: 16px; font-weight: 600; }
+.shell { min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr) 300px; }
+.nav {
+  background: var(--panel-2); border-inline-end: 1px solid var(--line);
+  padding: 10px; display: flex; flex-direction: column; gap: 4px;
+}
+.navbtn {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: start;
+  background: transparent; border: 0; color: var(--muted); border-radius: 8px; padding: 9px 10px;
+}
+.navbtn:hover { background: #1a2430; color: var(--text); }
+.navbtn.active { background: #1c2633; color: var(--text); }
+.navbtn .badge { margin-inline-start: auto; }
+.badge {
+  background: var(--crit); color: white; border-radius: 99px; min-width: 18px; height: 18px;
+  display: inline-grid; place-items: center; padding: 0 5px; font-size: 11px;
+}
+@keyframes blink { 50% { opacity: .45; } }
+.badge.hot { animation: blink 1.2s steps(2, end) infinite; }
+.workspace { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+.view { display: none; }
+.view.active { display: flex; flex-direction: column; gap: 10px; padding: 10px; min-height: 0; flex: 1; }
+#view-monitor.active, #view-incidents.active { overflow: hidden; }
+#view-shift.active, #view-settings.active, #view-inspect.active { overflow: auto; }
+.inspector {
+  overflow: auto; background: var(--panel-2); border-inline-start: 1px solid var(--line);
+  padding: 12px; display: flex; flex-direction: column; gap: 12px;
+}
+.summary { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.summary div { background: #0e141c; border-radius: 8px; padding: 6px 8px; }
+.summary b { display: block; font-size: 13px; }
+.summary span { color: var(--muted); font-size: 11px; }
+.sources { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.sources.quad { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.source[hidden] { display: none !important; }
+.source { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 8px; display: grid; gap: 6px; }
+.source-top, .source-meta, .source-actions, .view-head, .toolbar, .filters, .row-actions, .modal-card footer {
+  display: flex; align-items: center; gap: 6px;
+}
+.source-actions { flex-wrap: wrap; }
+.source-top b { font-weight: 500; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.source-top b.on { color: var(--ok); }
+.source-meta { justify-content: space-between; color: var(--muted); font-size: 11px; }
+.cam-name, .operator {
+  background: transparent; border: 0; border-bottom: 1px solid transparent; min-width: 0;
+}
+.cam-name { flex: 1; }
+.cam-name:focus, .operator:focus { border-bottom-color: var(--brass); outline: none; }
+.operator { width: 132px; height: 34px; background: #0e141c; border: 1px solid var(--line); border-radius: 8px; padding: 0 8px; }
+.card .operator { width: 100%; }
+.led { width: 8px; height: 8px; border-radius: 50%; background: #5c6b7a; flex: none; }
+.led.on { background: var(--ok); box-shadow: 0 0 0 3px rgba(62, 207, 142, .15); }
+.toolbar, .view-head, .filters { flex-wrap: wrap; }
+.view-head { justify-content: space-between; }
+.btn, select.field, summary.btn {
+  height: 34px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line-strong);
+  background: #1a222d; color: var(--text); font-size: 13px; font-weight: 500;
+}
+.btn:hover, select.field:hover, summary.btn:hover { background: #223044; }
+.btn.primary { background: linear-gradient(180deg, #e8c27a, #c4923e); color: #1a1306; border-color: #f0d7a2; font-weight: 700; }
+.btn.danger { color: #ffb4b4; border-color: #6a3038; background: transparent; }
+.btn.tiny { height: 28px; padding: 0 8px; font-size: 12px; }
+.btn:disabled { opacity: .45; cursor: default; }
+.btn[aria-pressed="true"] { border-color: var(--brass); color: #f0d7a2; }
+select.field { appearance: auto; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.seg button { background: transparent; border: 0; color: var(--muted); padding: 6px 10px; height: 34px; }
+.seg button[aria-pressed="true"] { background: #243044; color: var(--text); }
+.seg button[data-state="open"][aria-pressed="true"] { color: #9ff0c8; }
+.seg button[data-state="caution"][aria-pressed="true"] { color: #ffd88a; }
+.seg button[data-state="inspection"][aria-pressed="true"] { color: #9fd4ea; }
+.seg button[data-state="closed"][aria-pressed="true"] { color: #ffb4b4; }
+.filters button[aria-pressed="true"] { border-color: var(--brass); color: #f0d7a2; }
+details.layers { position: relative; }
+summary.btn { list-style: none; display: inline-flex; align-items: center; }
+summary.btn::-webkit-details-marker { display: none; }
+.layers-body {
+  position: absolute; z-index: 8; top: calc(100% + 6px); inset-inline-start: 0; width: 280px;
+  background: #151c26; border: 1px solid var(--line-strong); border-radius: 10px; padding: 10px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .35); display: grid; gap: 6px;
+}
+.toolbar { position: relative; z-index: 5; }
+.check { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.slider-line { display: grid; gap: 4px; font-size: 12px; color: var(--muted); }
+input[type="range"] { width: 100%; accent-color: var(--brass); }
+.note {
+  background: #241c10; color: #ffd88a; border: 1px solid rgba(224, 177, 90, .35);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px;
+}
+.panorama {
+  position: relative; z-index: 1; flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #090d12; border: 1px solid var(--line); border-radius: 12px; overflow: hidden;
+}
+.bar {
+  display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 12px;
+  border-inline-start: 3px solid transparent;
+}
+body[data-runway="open"] .bar { border-inline-start-color: var(--ok); }
+body[data-runway="caution"] .bar { border-inline-start-color: var(--warn); }
+body[data-runway="inspection"] .bar { border-inline-start-color: var(--info); }
+body[data-runway="closed"] .bar { border-inline-start-color: var(--crit); }
+.bar-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); font-size: 12px; }
+.att-normal { color: var(--ok); border-color: rgba(62, 207, 142, .4); }
+.att-watch { color: var(--warn); border-color: rgba(240, 180, 41, .45); }
+.att-critical { color: var(--crit); border-color: rgba(255, 93, 93, .5); }
+.pill.warn { color: #ffd88a; border-color: rgba(224, 177, 90, .45); }
+.live { color: var(--muted); }
+.live.on { color: var(--ok); }
+.live.on::before {
+  content: ""; display: inline-block; width: 7px; height: 7px; margin-inline-end: 6px;
+  border-radius: 50%; background: var(--ok);
+}
+.engine.loading { color: var(--warn); }
+.engine.ready { color: var(--ok); }
+.engine.error { color: var(--crit); }
+.stage { position: relative; flex: 1; min-height: 220px; }
+.stage canvas { width: 100%; height: 100%; display: block; }
+.stage.drawing canvas { cursor: crosshair; touch-action: none; }
+.compass, .alarm, .empty-hint, .statbar { pointer-events: none; }
+.compass {
+  position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 3;
+  background: rgba(8, 12, 18, .72); border: 1px solid var(--line); border-radius: 999px;
+  padding: 3px 10px; font-size: 12px;
+}
+.empty-hint {
+  display: none; position: absolute; top: 16%; left: 50%; transform: translateX(-50%);
+  text-align: center; gap: 4px; z-index: 3; width: min(520px, 86%);
+}
+.empty-hint.show { display: grid; }
+.empty-hint strong { font-size: 22px; }
+.alarm {
+  display: none; position: absolute; top: 46px; left: 50%; transform: translateX(-50%);
+  background: #8f1d2c; color: white; padding: 8px 14px; border-radius: 8px; font-weight: 700;
+  z-index: 4; max-width: 86%; text-align: center;
+}
+.alarm.show { display: block; }
+.statbar {
+  position: absolute; left: 8px; right: 8px; bottom: 8px; z-index: 3;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px;
+}
+.stat { background: rgba(8, 12, 18, .82); border: 1px solid rgba(255, 255, 255, .08); border-radius: 8px; padding: 6px 8px; }
+.stat b { display: block; font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat span { color: var(--muted); font-size: 11px; }
+.stat.air { border-top: 2px solid #7ec8e3; } .stat.air b { color: #7ec8e3; }
+.stat.vehicle { border-top: 2px solid #e0b15a; } .stat.vehicle b { color: #e0b15a; }
+.stat.person { border-top: 2px solid #ff5d5d; } .stat.person b { color: #ff8d8d; }
+.stat.wildlife { border-top: 2px solid #62d39a; } .stat.wildlife b { color: #62d39a; }
+.stat.fod { border-top: 2px solid #ff8a4c; } .stat.fod b { color: #ff8a4c; }
+.stat.open { border-top: 2px solid #fff; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px; }
+.zone-row { display: grid; grid-template-columns: 8px minmax(0, 1fr) 92px auto; gap: 6px; align-items: center; margin-bottom: 6px; }
+.zone-row input, .zone-row select, textarea, .diag b { background: #101820; border: 1px solid var(--line); border-radius: 6px; }
+.zone-row input, .zone-row select { height: 30px; width: 100%; padding: 0 6px; }
+textarea { width: 100%; min-height: 140px; padding: 8px; resize: vertical; }
+.dot { width: 8px; height: 8px; border-radius: 50%; display: block; }
+.dot.restricted { background: #ff5d5d; } .dot.caution { background: #f0b429; } .dot.watch { background: #7ec8e3; }
+.log-row { display: grid; grid-template-columns: 78px minmax(0, 1fr); gap: 6px; padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, .06); font-size: 12px; }
+.log-row.alarm time { color: #ff8d8d; }
+.log-row.snap time { color: #8ee0b8; }
+time { font-style: normal; font-variant-numeric: tabular-nums; }
+.kanban { flex: 1; min-height: 220px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.kcol { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; display: flex; flex-direction: column; min-height: 0; }
+.kcol header { display: flex; justify-content: space-between; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.kcards { overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 8px; min-height: 80px; }
+.icard { background: #101820; border: 1px solid rgba(255, 255, 255, .08); border-radius: 10px; padding: 8px; display: grid; gap: 4px; cursor: pointer; text-align: start; }
+.icard.sev-critical { border-inline-start: 3px solid var(--crit); }
+.icard.sev-high { border-inline-start: 3px solid #ff8a4c; }
+.icard.sev-medium { border-inline-start: 3px solid var(--warn); }
+.icard.active { outline: 1px solid var(--brass); }
+.shot { width: 100%; border-radius: 8px; margin-top: 4px; }
+.log-dock { max-height: 170px; overflow: auto; flex: none; }
+.shift-grid, .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.span-2 { grid-column: 1 / -1; }
+.inspect-grid { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(260px, .8fr); gap: 12px; }
+.drop { border: 1px dashed rgba(224, 177, 90, .45); border-radius: 12px; padding: 16px; text-align: center; color: var(--muted); }
+.drop.hot { background: rgba(224, 177, 90, .08); }
+#inspectCanvas { width: 100%; height: auto; border-radius: 12px; background: #090d12; margin-top: 8px; }
+.finding { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid rgba(255, 255, 255, .06); }
+.samples { display: flex; flex-wrap: wrap; gap: 6px; }
+.tax-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.tax { border: 1px solid var(--line); border-radius: 8px; padding: 8px; display: grid; gap: 2px; background: #121922; }
+.tax.high { border-top: 2px solid var(--crit); }
+.tax.medium { border-top: 2px solid var(--warn); }
+.tax.low { border-top: 2px solid var(--info); }
+.tax small, .tax em { color: var(--muted); font-size: 11px; font-style: normal; }
+.rules { margin: 0; padding-inline-start: 18px; display: grid; gap: 4px; font-size: 13px; }
+.diag { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 4px; }
+.diag li { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; }
+.diag b { font-weight: 500; text-align: end; word-break: break-all; border: 0; background: transparent; }
+code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; }
+footer.appfoot {
+  display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap;
+  padding: 8px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px;
+}
+kbd { border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; font-family: inherit; }
+.modal { position: fixed; inset: 0; z-index: 40; background: rgba(5, 8, 12, .72); display: grid; place-items: center; padding: 16px; }
+.modal-card { width: min(460px, 100%); background: var(--panel); border: 1px solid rgba(255, 93, 93, .65); border-radius: 14px; overflow: hidden; }
+.modal-card header { padding: 12px 14px; background: #8f1d2c; }
+.modal-card header h2 { font-size: 16px; }
+.modal-card .body { padding: 12px 14px; display: grid; gap: 8px; }
+.modal-card footer { justify-content: flex-end; padding: 0 14px 14px; }
+.toast {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%) translateY(12px);
+  background: #1c2633; border: 1px solid var(--line-strong); color: var(--text);
+  padding: 8px 14px; border-radius: 999px; z-index: 60; opacity: 0; pointer-events: none; transition: .2s ease;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+#printArea { display: none; }
+@media (prefers-reduced-motion: reduce) {
+  .badge.hot, .toast { animation: none; transition: none; }
+}
+@media (max-width: 1180px) {
+  .shell { grid-template-columns: 200px minmax(0, 1fr); }
+  .inspector { grid-column: 1 / -1; max-height: 260px; border-inline-start: 0; border-top: 1px solid var(--line); }
+}
+@media (max-width: 860px) {
+  .shell { grid-template-columns: 1fr; }
+  .nav { flex-direction: row; overflow: auto; }
+  .navbtn { width: auto; white-space: nowrap; }
+  .sources, .kanban, .shift-grid, .settings-grid, .inspect-grid, .statbar { grid-template-columns: 1fr; }
+  .statbar { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .span-2 { grid-column: auto; }
+}
+@media print {
+  body { background: white; }
+  .app, .modal, .toast { display: none !important; }
+  #printArea { display: block; color: #111; padding: 24px; }
+  #printArea h1 { font-size: 22px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="appbar">
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <div>
+        <strong>سامانه پایش و ایمنی باند</strong>
+        <small>فرودگاه بین‌المللی امام خمینی (ره) · <bdi dir="ltr">IKA</bdi></small>
+      </div>
+    </div>
+    <div class="head-actions">
+      <select id="runwaySel" class="field" title="باند فعال">
+        <option value="29R">29R</option>
+        <option value="29L">29L</option>
+        <option value="11L">11L</option>
+        <option value="11R">11R</option>
+      </select>
+      <div class="seg" id="stateSeg" role="group" aria-label="وضعیت عملیاتی باند">
+        <button type="button" data-act="runway-state" data-state="open">باز</button>
+        <button type="button" data-act="runway-state" data-state="caution">احتیاط</button>
+        <button type="button" data-act="runway-state" data-state="inspection">بازرسی</button>
+        <button type="button" data-act="runway-state" data-state="closed">بسته</button>
+      </div>
+      <input class="operator" data-operator maxlength="48" placeholder="نام اپراتور" aria-label="نام اپراتور">
+    </div>
+    <div class="clocks">
+      <strong id="clockLocal">--:--:--</strong>
+      <span><span id="dateLocal"></span> · شیفت <span id="shiftClock">۰۰:۰۰:۰۰</span></span>
+      <span id="clockUtc" dir="ltr">--:--:-- UTC</span>
+      <span id="engineStatus" class="engine loading">در حال بارگذاری</span>
+    </div>
+  </header>
+
+  <div class="shell">
+    <nav class="nav" aria-label="بخش‌های سامانه">
+      <button type="button" class="navbtn active" data-act="goto" data-view="monitor"><span>پایش زنده</span></button>
+      <button type="button" class="navbtn" data-act="goto" data-view="incidents"><span>رخدادها</span><i id="badge" class="badge" hidden>۰</i></button>
+      <button type="button" class="navbtn" data-act="goto" data-view="inspect"><span>بازرسی تصویر</span></button>
+      <button type="button" class="navbtn" data-act="goto" data-view="shift"><span>شیفت</span></button>
+      <button type="button" class="navbtn" data-act="goto" data-view="settings"><span>تنظیمات</span></button>
+    </nav>
+
+    <main class="workspace">
+      <section id="view-monitor" class="view active">
+        <p id="fileNote" class="note" hidden>این صفحه مستقیم از روی فایل باز شده است. برای YOLOv8 و تحلیل عکس محلی، آن را با یک سرور محلی باز کنید.</p>
+        <div class="sources" id="sources">
+          <div class="source" id="sourceL">
+            <div class="source-top"><i id="ledL" class="led"></i><input id="camNameL" class="cam-name" data-cam-name="L" maxlength="32" value="آستانه" aria-label="نام دوربین چپ"><b id="stL">بدون سیگنال</b></div>
+            <div class="source-meta"><span>چپ</span><span id="resL">—</span></div>
+            <div class="source-actions">
+              <button type="button" class="btn" data-act="pick" data-cam="L">ویدیو</button>
+              <button type="button" class="btn" data-act="webcam" data-cam="L">وب‌کم</button>
+              <button type="button" class="btn" data-act="screen" data-cam="L">صفحه</button>
+              <button type="button" class="btn danger" data-act="clear-cam" data-cam="L">قطع</button>
+            </div>
+          </div>
+          <div class="source" id="sourceC">
+            <div class="source-top"><i id="ledC" class="led"></i><input id="camNameC" class="cam-name" data-cam-name="C" maxlength="32" value="میانه باند" aria-label="نام دوربین میانی"><b id="stC">بدون سیگنال</b></div>
+            <div class="source-meta"><span>میانه</span><span id="resC">—</span></div>
+            <div class="source-actions">
+              <button type="button" class="btn" data-act="pick" data-cam="C">ویدیو</button>
+              <button type="button" class="btn" data-act="webcam" data-cam="C">وب‌کم</button>
+              <button type="button" class="btn" data-act="screen" data-cam="C">صفحه</button>
+              <button type="button" class="btn danger" data-act="clear-cam" data-cam="C">قطع</button>
+            </div>
+          </div>
+          <div class="source" id="sourceR">
+            <div class="source-top"><i id="ledR" class="led"></i><input id="camNameR" class="cam-name" data-cam-name="R" maxlength="32" value="انتهای باند" aria-label="نام دوربین راست"><b id="stR">بدون سیگنال</b></div>
+            <div class="source-meta"><span>راست</span><span id="resR">—</span></div>
+            <div class="source-actions">
+              <button type="button" class="btn" data-act="pick" data-cam="R">ویدیو</button>
+              <button type="button" class="btn" data-act="webcam" data-cam="R">وب‌کم</button>
+              <button type="button" class="btn" data-act="screen" data-cam="R">صفحه</button>
+              <button type="button" class="btn danger" data-act="clear-cam" data-cam="R">قطع</button>
+            </div>
+          </div>
+          <div class="source" id="sourceE" hidden>
+            <div class="source-top"><i id="ledE" class="led"></i><input id="camNameE" class="cam-name" data-cam-name="E" maxlength="32" value="نمای ۴" aria-label="نام دوربین چهارم"><b id="stE">بدون سیگنال</b></div>
+            <div class="source-meta"><span>چهارم</span><span id="resE">—</span></div>
+            <div class="source-actions">
+              <button type="button" class="btn" data-act="pick" data-cam="E">ویدیو</button>
+              <button type="button" class="btn" data-act="webcam" data-cam="E">وب‌کم</button>
+              <button type="button" class="btn" data-act="screen" data-cam="E">صفحه</button>
+              <button type="button" class="btn danger" data-act="clear-cam" data-cam="E">قطع</button>
+            </div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button type="button" class="btn primary" id="startBtn" data-act="start">شروع پایش</button>
+          <button type="button" class="btn" id="stopBtn" data-act="stop" disabled>توقف</button>
+          <button type="button" class="btn" id="zoneBtn" data-act="zone">رسم منطقه</button>
+          <select id="zoneType" class="field" title="نوع منطقه جدید">
+            <option value="restricted">ممنوعه</option>
+            <option value="caution">احتیاط</option>
+            <option value="watch">پایش</option>
+          </select>
+          <button type="button" class="btn" data-act="sample-zone">منطقه نمونه</button>
+          <button type="button" class="btn danger" data-act="clear-zones">پاک کردن مناطق</button>
+          <button type="button" class="btn" data-act="snap">ثبت تصویر</button>
+          <button type="button" class="btn" id="nightBtn" data-act="night">حالت شب</button>
+          <button type="button" class="btn" data-act="fullscreen">تمام‌صفحه</button>
+          <button type="button" class="btn" id="demoBtn" data-act="demo">دمو ویدیو</button>
+          <select id="surfaceSel" class="field" title="وضعیت سطح">
+            <option value="dry">سطح خشک</option>
+            <option value="wet">سطح مرطوب</option>
+            <option value="contaminated">سطح آلوده</option>
+          </select>
+          <details class="layers">
+            <summary class="btn">لایه‌ها و حساسیت</summary>
+            <div class="layers-body">
+              <label class="check"><input type="checkbox" data-flag="person" checked> انسان</label>
+              <label class="check"><input type="checkbox" data-flag="airplane" checked> هواپیما</label>
+              <label class="check"><input type="checkbox" data-flag="vehicle" checked> وسیله</label>
+              <label class="check"><input type="checkbox" data-flag="wildlife" checked> حیات‌وحش</label>
+              <label class="check"><input type="checkbox" data-flag="fod" checked> کاندید FOD</label>
+              <label class="check"><input type="checkbox" data-flag="boxes" checked> کادر</label>
+              <label class="check"><input type="checkbox" data-flag="labels" checked> برچسب</label>
+              <label class="check"><input type="checkbox" data-flag="trails" checked> رد حرکت</label>
+              <div class="slider-line"><span>حداقل اطمینان <b id="confVal">۳۰٪</b></span><input id="confSlider" type="range" min="15" max="75" value="30"></div>
+            </div>
+          </details>
+          <span id="sourceHint" class="muted">هیچ منبعی وصل نیست</span>
+        </div>
+        <section class="panorama">
+          <div class="bar">
+            <span id="sceneTitle">نمای یکپارچه باند</span>
+            <span class="bar-meta">
+              <span id="demoBadge" class="pill warn" hidden>دمو ویدیو</span>
+              <span id="attentionPill" class="pill att-normal">توجه عادی</span>
+              <span id="liveLabel" class="live">فقط نمایش</span>
+              <span id="hudPerf" class="muted"></span>
+            </span>
+          </div>
+          <div class="stage" id="stage">
+            <canvas id="wideCanvas" width="1280" height="720"></canvas>
+            <div id="compassChip" class="compass">دید ۲۷۰°</div>
+            <div id="emptyHint" class="empty-hint">
+              <strong>در انتظار تصویر</strong>
+              <span>ویدیو، وب‌کم یا اشتراک صفحه را وصل کنید. دکمهٔ دمو ویدیو، فایل‌های پوشهٔ videos را پخش می‌کند.</span>
+            </div>
+            <div id="alarmBanner" class="alarm"></div>
+            <div class="statbar">
+              <div class="stat air"><b id="statAir">۰</b><span>هواپیما</span></div>
+              <div class="stat vehicle"><b id="statVeh">۰</b><span>وسیله</span></div>
+              <div class="stat person"><b id="statPerson">۰</b><span>انسان</span></div>
+              <div class="stat wildlife"><b id="statWild">۰</b><span>حیات‌وحش</span></div>
+              <div class="stat fod"><b id="statFod">۰</b><span>کاندید FOD</span></div>
+              <div class="stat open"><b id="statOpen">۰</b><span>رخداد باز</span></div>
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <section id="view-incidents" class="view">
+        <div class="view-head">
+          <h2>تخته رخداد</h2>
+          <div class="row-actions">
+            <button type="button" class="btn" data-act="ack-all">تأیید همه</button>
+            <button type="button" class="btn" data-act="export-csv">خروجی CSV</button>
+            <button type="button" class="btn" data-act="export-json">خروجی JSON</button>
+            <button type="button" class="btn danger" data-act="clear-incidents">پاک کردن</button>
+          </div>
+        </div>
+        <div class="filters" id="incFilters">
+          <button type="button" class="btn tiny" data-act="ifilter" data-filter="all" aria-pressed="true">همه</button>
+          <button type="button" class="btn tiny" data-act="ifilter" data-filter="open">باز</button>
+          <button type="button" class="btn tiny" data-act="ifilter" data-filter="critical">بحرانی</button>
+          <button type="button" class="btn tiny" data-act="ifilter" data-filter="fod">FOD</button>
+          <button type="button" class="btn tiny" data-act="ifilter" data-filter="wildlife">حیات‌وحش</button>
+        </div>
+        <div class="kanban">
+          <section class="kcol"><header><span>جدید</span><b id="cntOpen">۰</b></header><div id="incOpen" class="kcards"></div></section>
+          <section class="kcol"><header><span>در حال رسیدگی</span><b id="cntAck">۰</b></header><div id="incAck" class="kcards"></div></section>
+          <section class="kcol"><header><span>بسته</span><b id="cntClosed">۰</b></header><div id="incClosed" class="kcards"></div></section>
+        </div>
+        <section class="card log-dock"><h3>رویدادها</h3><div id="logFull"></div></section>
+      </section>
+
+      <section id="view-inspect" class="view">
+        <div class="view-head">
+          <h2>بازرسی تصویر ثابت</h2>
+          <div class="row-actions">
+            <button type="button" class="btn" data-act="pick-image">انتخاب عکس</button>
+            <button type="button" class="btn" data-act="redetect">اجرای دوباره</button>
+          </div>
+        </div>
+        <div class="inspect-grid">
+          <div>
+            <div id="dropZone" class="drop">عکس را اینجا رها کنید، یا بچسبانید، یا از نمونه‌ها انتخاب کنید.</div>
+            <canvas id="inspectCanvas"></canvas>
+            <p id="inspectStatus" class="muted">هنوز تصویری انتخاب نشده است.</p>
+          </div>
+          <div class="card">
+            <h3>نمونه‌ها</h3>
+            <div id="sampleStrip" class="samples"></div>
+            <h3 style="margin-top:12px">یافته‌ها</h3>
+            <div id="inspectList"><p class="muted">پس از تحلیل، موارد اینجا فهرست می‌شوند. ثبت رخداد فقط با تأیید شما انجام می‌شود.</p></div>
+          </div>
+        </div>
+        <section class="card">
+          <div class="view-head">
+            <h3>راهنمای ۳۱ کلاس FOD-A</h3>
+            <input id="taxSearch" class="operator" placeholder="جستجو" aria-label="جستجوی کلاس">
+          </div>
+          <p class="muted">مدل زنده اجسام درشت را می‌بیند. کلاس‌های ریز این فهرست با بازرسی چشمی یا مدل اختصاصی OAK-D پوشش داده می‌شوند.</p>
+          <div id="taxGrid" class="tax-grid"></div>
+        </section>
+      </section>
+
+      <section id="view-shift" class="view">
+        <div class="view-head">
+          <h2>شیفت و چک‌لیست</h2>
+          <div class="row-actions">
+            <button type="button" class="btn" data-act="new-shift">شروع شیفت جدید</button>
+            <button type="button" class="btn primary" data-act="print-shift">چاپ گزارش</button>
+          </div>
+        </div>
+        <div class="shift-grid">
+          <section class="card">
+            <h3>هویت شیفت</h3>
+            <label class="muted" for="operatorShift">اپراتور</label>
+            <input id="operatorShift" class="operator" data-operator maxlength="48" placeholder="نام اپراتور">
+            <p>مدت شیفت: <b id="sumShift">۰۰:۰۰:۰۰</b></p>
+            <p class="muted">وضعیت باند، سطح و نام اپراتور در گزارش چاپی می‌آید.</p>
+          </section>
+          <section class="card">
+            <h3>چک‌لیست <span id="checkProgress" class="muted">۰ از ۷</span></h3>
+            <div id="checkList"></div>
+          </section>
+          <section class="card span-2">
+            <h3>یادداشت تحویل</h3>
+            <textarea id="notes" maxlength="4000" placeholder="نکته‌های تحویل شیفت، وضعیت سطح، کار در جریان..."></textarea>
+          </section>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="view-head"><h2>تنظیمات عملیات</h2></div>
+        <div class="settings-grid">
+          <section class="card">
+            <h3>موتور تشخیص</h3>
+            <select id="modelMode" class="field">
+              <option value="fusion">COCO + YOLOv8</option>
+              <option value="coco">فقط COCO سریع</option>
+              <option value="coco_acc">COCO دقیق</option>
+              <option value="yolo">فقط YOLOv8</option>
+            </select>
+            <div class="slider-line" style="margin-top:10px"><span>فاصله هر دوربین <b id="intervalVal">۴۰۰ms</b></span><input id="intervalSlider" type="range" min="250" max="900" step="50" value="400"></div>
+            <ul class="diag">
+              <li><span>COCO</span><b id="diagCoco">—</b></li>
+              <li><span>YOLO</span><b id="diagYolo">—</b></li>
+              <li><span>چیدمان ورودی</span><b id="diagLayout">—</b></li>
+              <li><span>آخرین خطا</span><b id="diagErr">—</b></li>
+            </ul>
+          </section>
+          <section class="card">
+            <h3>هشدار</h3>
+            <label class="check"><input type="checkbox" data-flag="audio" checked> هشدار صوتی</label>
+            <label class="check"><input type="checkbox" data-flag="alertPersonGlobal" checked> با باند باز، انسان در کل نما بحرانی است</label>
+            <div class="row-actions" style="margin-top:8px"><button type="button" class="btn" data-act="test-audio">آزمایش صدا</button></div>
+            <div class="slider-line" style="margin-top:10px"><span>جهت دید دوربین <b id="lookVal">۲۷۰°</b></span><input id="lookSlider" type="range" min="0" max="359" value="270"></div>
+          </section>
+          <section class="card">
+            <h3>قواعد رخداد</h3>
+            <ul class="rules">
+              <li>باند باز و دیدن انسان: بحرانی.</li>
+              <li>انسان یا هواپیما داخل منطقه ممنوعه: بحرانی.</li>
+              <li>وسیله، بار یا حیات‌وحش داخل منطقه ممنوعه: بالا.</li>
+              <li>پرنده وقتی باند باز یا در احتیاط است: متوسط.</li>
+              <li>کاندید FOD: متوسط، و اگر داخل منطقه ممنوعه باشد بالا.</li>
+              <li>در وضعیت بازرسی، حضور انسان به‌تنهایی بحرانی نمی‌شود.</li>
+              <li>هواپیمای عبوری بیرون از منطقه فقط در شمارنده می‌آید.</li>
+            </ul>
+          </section>
+          <section class="card">
+            <h3>داده همین رایانه</h3>
+            <p class="muted">رخداد، منطقه، چک‌لیست و یادداشت در حافظه محلی مرورگر می‌ماند.</p>
+            <div class="row-actions">
+              <button type="button" class="btn" data-act="export-json">JSON</button>
+              <button type="button" class="btn" data-act="export-csv">CSV</button>
+              <button type="button" class="btn danger" data-act="clear-storage">پاک کردن همه داده‌ها</button>
+            </div>
+            <p class="muted" style="margin-top:8px">اجرای محلی: <code dir="ltr">python -m http.server 8765</code></p>
+          </section>
+          <section class="card span-2">
+            <h3>حدود این نسخه</h3>
+            <p>تشخیص مرورگر برای انسان، هواپیما، وسیله، پرنده و اشیاء درشت قابل‌حمل است. پیچ، مهره، سنگریزه، ورق فلزی و ابزار ریز کلاس‌های مجموعه FOD-A هستند و در راهنمای بازرسی تصویر آمده‌اند. مدل اختصاصی ۳۱کلاسه روی دستگاه OAK-D در پوشه fod-detection است و جای بازرسی چشمی را نمی‌گیرد.</p>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <aside class="inspector">
+      <section data-side="all">
+        <h3>خلاصه شیفت</h3>
+        <div class="summary">
+          <div><span>وضعیت باند</span><b id="sumState">باز</b></div>
+          <div><span>توجه</span><b id="sumAtt">عادی</b></div>
+          <div><span>رخداد باز</span><b id="sumOpen">۰</b></div>
+          <div><span>اپراتور</span><b id="sumOp">ثبت نشده</b></div>
+        </div>
+      </section>
+      <section data-side="monitor" id="sideMonitor">
+        <h3>هدف انتخاب‌شده</h3>
+        <p id="selEmpty" class="muted">روی یک کادر در تصویر کلیک کنید.</p>
+        <div id="selCard" hidden>
+          <strong id="selTitle"></strong>
+          <p id="selMeta" class="muted"></p>
+        </div>
+        <h3>مناطق</h3>
+        <div id="zoneList"></div>
+        <h3>رویدادهای اخیر</h3>
+        <div id="logList"></div>
+      </section>
+      <section data-side="incidents" id="sideIncidents" hidden>
+        <h3>جزئیات رخداد</h3>
+        <div id="incDetail"></div>
+      </section>
+      <section data-side="inspect" hidden>
+        <h3>روش کار</h3>
+        <p class="muted">عکس سطح را تحلیل کنید. فقط موردی را به تخته رخداد بفرستید که اپراتور آن را تأیید کرده است.</p>
+      </section>
+      <section data-side="shift" hidden>
+        <h3>تحویل</h3>
+        <p class="muted">چک‌لیست کامل و یادداشت، مبنای تحویل شیفت است. چاپ، همین موارد را روی کاغذ می‌آورد.</p>
+      </section>
+      <section data-side="settings" hidden>
+        <h3>میانبرها</h3>
+        <p class="muted">Space پایش، Z منطقه، S تصویر، N شب، D دمو ویدیو، F تمام‌صفحه، کلیدهای ۱ تا ۵ نماها.</p>
+      </section>
+    </aside>
+  </div>
+  <footer class="appfoot">
+    <span>سامانه پایش و ایمنی باند · ویرایش ۲ · داده فقط روی همین رایانه</span>
+    <span><kbd>Space</kbd> پایش · <kbd>Z</kbd> منطقه · <kbd>S</kbd> تصویر · <kbd>N</kbd> شب · <kbd>D</kbd> دمو · <kbd>1-5</kbd> نما</span>
+  </footer>
+</div>
+
+<div id="printArea"></div>
+<div class="modal" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <header><h2 id="modalTitle">رخداد بحرانی</h2></header>
+    <div class="body" id="modalBody"></div>
+    <footer id="modalActions"></footer>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<div id="announcer" class="sr-only" aria-live="assertive"></div>
+<input id="fileL" type="file" accept="video/*" hidden>
+<input id="fileC" type="file" accept="video/*" hidden>
+<input id="fileR" type="file" accept="video/*" hidden>
+<input id="fileE" type="file" accept="video/*" hidden>
+<input id="inspectFile" type="file" accept="image/*" hidden>
+<video id="vidL" class="ghost-video" playsinline muted></video>
+<video id="vidC" class="ghost-video" playsinline muted></video>
+<video id="vidR" class="ghost-video" playsinline muted></video>
+<video id="vidE" class="ghost-video" playsinline muted></video>
+<style>.ghost-video{position:fixed;width:2px;height:2px;opacity:.02;pointer-events:none;inset:auto 0 0 auto}</style>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/ort.min.js"></script>
+<script>
+'use strict';
+const KEY = 'ika_ops_v3';
+const YOLO_SIZE = 640;
+const CAMS = ['L', 'C', 'R'];
+const COCO_NAMES = ['person','bicycle','car','motorcycle','airplane','bus','train','truck','boat','traffic light','fire hydrant','stop sign','parking meter','bench','bird','cat','dog','horse','sheep','cow','elephant','bear','zebra','giraffe','backpack','umbrella','handbag','tie','suitcase','frisbee','skis','snowboard','sports ball','kite','baseball bat','baseball glove','skateboard','surfboard','tennis racket','bottle','wine glass','cup','fork','knife','spoon','bowl','banana','apple','sandwich','orange','broccoli','carrot','hot dog','pizza','donut','cake','chair','couch','potted plant','bed','dining table','toilet','tv','laptop','mouse','remote','keyboard','cell phone','microwave','oven','toaster','sink','refrigerator','book','clock','vase','scissors','teddy bear','hair drier','toothbrush'];
+const VEHICLE = new Set(['bicycle','car','motorcycle','bus','train','truck','boat']);
+const WILDLIFE = new Set(['bird','cat','dog','horse','sheep','cow','elephant','bear','zebra','giraffe']);
+const FOD = new Set(['backpack','umbrella','handbag','suitcase','bottle','cup','knife','fork','spoon','bowl','book','cell phone','scissors','clock','vase','sports ball','frisbee','remote']);
+const LABEL_FA = {person:'انسان',airplane:'هواپیما',bicycle:'دوچرخه',car:'خودرو',motorcycle:'موتورسیکلت',bus:'اتوبوس',train:'قطار',truck:'کامیون',boat:'قایق',bird:'پرنده',cat:'گربه',dog:'سگ',horse:'اسب',sheep:'گوسفند',cow:'گاو',bear:'خرس',backpack:'کوله‌پشتی',umbrella:'چتر',handbag:'کیف',suitcase:'چمدان',bottle:'بطری',cup:'فنجان',knife:'چاقو',fork:'چنگال',spoon:'قاشق',bowl:'کاسه',book:'کتاب','cell phone':'تلفن همراه',scissors:'قیچی',clock:'ساعت',vase:'گلدان','sports ball':'توپ',frisbee:'فریزبی',remote:'ریموت'};
+const SEV_FA = {critical:'بحرانی',high:'بالا',medium:'متوسط',low:'کم',info:'اطلاع'};
+const STATUS_FA = {open:'جدید',ack:'در حال رسیدگی',closed:'بسته'};
+const FOD_TAX = [
+  ['AdjustableClamp','گیره قابل تنظیم','medium',''],
+  ['AdjustableWrench','آچار فرانسه','high',''],
+  ['Battery','باتری','high',''],
+  ['Bolt','پیچ','high',''],
+  ['BoltNutSet','ست پیچ و مهره','high',''],
+  ['BoltWasher','پیچ و واشر','high',''],
+  ['ClampPart','قطعه گیره','medium',''],
+  ['Cutter','کاتر','high',''],
+  ['FuelCap','درپوش سوخت','high',''],
+  ['Hammer','چکش','high',''],
+  ['Hose','شیلنگ','medium',''],
+  ['Label','برچسب','low',''],
+  ['LuggagePart','قطعه بار','medium','تقریبی: چمدان'],
+  ['LuggageTag','برچسب بار','medium','تقریبی: چمدان'],
+  ['MetalPart','قطعه فلزی','high',''],
+  ['MetalSheet','ورق فلزی','high',''],
+  ['Nail','میخ','high',''],
+  ['Nut','مهره','high',''],
+  ['PaintChip','پوسته رنگ','low',''],
+  ['Pen','خودکار','low',''],
+  ['PlasticPart','قطعه پلاستیکی','medium',''],
+  ['Pliers','انبردست','high',''],
+  ['Rock','سنگ','high',''],
+  ['Screw','پیچ ریز','high',''],
+  ['Screwdriver','پیچ‌گوشتی','high',''],
+  ['SodaCan','قوطی نوشابه','medium','تقریبی: بطری یا فنجان'],
+  ['Tape','نوار چسب','low',''],
+  ['Washer','واشر','high',''],
+  ['Wire','سیم','high',''],
+  ['Wood','چوب','medium',''],
+  ['Wrench','آچار','high','']
+];
+const CHECKS = [
+  ['cams','سه منبع تصویری بررسی شد'],
+  ['zones','مناطق با وضعیت باند تطبیق داده شد'],
+  ['audio','هشدار صوتی آزمایش شد'],
+  ['openinc','رخدادهای باز مرور شد'],
+  ['surface','وضعیت سطح باند ثبت شد'],
+  ['wild','محدوده از نظر حیات‌وحش دیده شد'],
+  ['handover','نام اپراتور و تحویل شیفت ثبت شد']
+];
+const SAMPLES = [
+  ['yolov8-onnx/sample.png','جمعیت'],
+  ['fod-data/Examples/Picture1.png','باند ۱'],
+  ['fod-data/Examples/Picture4.png','باند ۴'],
+  ['fod-data/Examples/Picture8.png','باند ۸'],
+  ['fod-data/Examples/manyEx.png','مجموع']
+];
+
+const cfg = {
+  conf: 0.30, audio: true, night: false, trails: true, labels: true, boxes: true,
+  person: true, airplane: true, vehicle: true, wildlife: true, fod: true,
+  alertPersonGlobal: true, modelMode: 'fusion', interval: 400, lookDeg: 270,
+  runway: '29R', runwayState: 'open', surface: 'dry', operator: '',
+  camNames: {L:'آستانه', C:'میانه باند', R:'انتهای باند', E:'نمای ۴'}, zoneType: 'restricted'
+};
+let zones = [];
+let incidents = [];
+let log = [];
+let checklist = {};
+let notes = '';
+let shiftStart = Date.now();
+let detectOn = false;
+let drawing = false;
+let anchor = null;
+let draft = null;
+let suppressClick = false;
+let selectedId = null;
+let activeIncId = null;
+let incFilter = 'all';
+let currentView = 'monitor';
+let nextTrack = 1;
+const tracks = [];
+const raised = new Set();
+const camCache = {L:{t:0,items:[]}, C:{t:0,items:[]}, R:{t:0,items:[]}, E:{t:0,items:[]}};
+let camCursor = 0;
+let detecting = false;
+let lastDetect = 0;
+let lastLogic = 0;
+let lastInferMs = 0;
+let latest = [];
+let thumbPending = false;
+let modalIncId = null;
+const critQueue = [];
+const modalShown = new Set();
+let cocoLite = null;
+let cocoAcc = null;
+let cocoLitePromise = null;
+let yoloSession = null;
+let yoloLayout = null;
+const diag = {coco:'—', yolo:'—', layout:'—', error:''};
+let inspectImg = null;
+let lastInspectSrc = '';
+let lastFindings = [];
+const demo = {on:false, keys:[], names:null};
+const demoObjects = [
+  {class:'airplane', score:0.94, x:-0.12, y:0.40, w:0.10, h:0.12, vx:0.0016, vy:0},
+  {class:'truck', score:0.90, x:1.05, y:0.74, w:0.055, h:0.10, vx:-0.0013, vy:0},
+  {class:'person', score:0.88, x:0.08, y:0.50, w:0.016, h:0.16, vx:0.0011, vy:0},
+  {class:'bird', score:0.80, x:0.20, y:0.12, w:0.022, h:0.05, vx:0.0014, vy:0.00018},
+  {class:'suitcase', score:0.76, x:0.47, y:0.48, w:0.020, h:0.09, vx:0, vy:0}
+];
+
+const canvas = document.getElementById('wideCanvas');
+const ctx = canvas.getContext('2d');
+const stage = document.getElementById('stage');
+const SLOTS = ['L', 'C', 'R', 'E'];
+const vids = {L:document.getElementById('vidL'), C:document.getElementById('vidC'), R:document.getElementById('vidR'), E:document.getElementById('vidE')};
+const streams = {L:null, C:null, R:null, E:null};
+const objectUrls = {L:null, C:null, R:null, E:null};
+const lbCanvas = document.createElement('canvas');
+let lbCtx = null;
+const inspectCanvas = document.getElementById('inspectCanvas');
+
+function $(id) { return document.getElementById(id); }
+function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+function faDigits(v) { return String(v).replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[d]); }
+function faNum(n) { return Number.isFinite(Number(n)) ? faDigits(Math.round(Number(n))) : '—'; }
+function uid(prefix) { return prefix + '-' + Date.now().toString(36) + '-' + Math.floor(Math.random() * 1000); }
+function labelOf(name) { return LABEL_FA[name] || name; }
+function family(name) {
+  if (name === 'person') return 'person';
+  if (name === 'airplane') return 'air';
+  if (VEHICLE.has(name)) return 'vehicle';
+  if (WILDLIFE.has(name)) return 'wildlife';
+  if (FOD.has(name)) return 'fod';
+  return 'other';
+}
+function colorOf(name) {
+  const kind = family(name);
+  if (kind === 'air') return '#7ec8e3';
+  if (kind === 'person') return '#ff5d5d';
+  if (kind === 'vehicle') return '#e0b15a';
+  if (kind === 'wildlife') return '#62d39a';
+  if (kind === 'fod') return '#ff8a4c';
+  return '#c5d0da';
+}
+function hexAlpha(hex, alpha) {
+  const n = hex.replace('#', '');
+  return 'rgba(' + parseInt(n.slice(0, 2), 16) + ',' + parseInt(n.slice(2, 4), 16) + ',' + parseInt(n.slice(4, 6), 16) + ',' + alpha + ')';
+}
+function runwayStateLabel() {
+  return {open:'باز', caution:'احتیاط', inspection:'بازرسی', closed:'بسته'}[cfg.runwayState] || 'باز';
+}
+function surfaceLabel() {
+  return {dry:'خشک', wet:'مرطوب', contaminated:'آلوده'}[cfg.surface] || 'خشک';
+}
+function fmtTime(ts) { return new Date(ts).toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}); }
+function fmtDate(ts) { return new Date(ts).toLocaleDateString('fa-IR'); }
+function fmtDuration(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const pad = (n) => String(n).padStart(2, '0');
+  return faDigits(pad(Math.floor(s / 3600)) + ':' + pad(Math.floor((s % 3600) / 60)) + ':' + pad(s % 60));
+}
+function setText(id, value) {
+  const node = $(id);
+  if (node && node.textContent !== String(value)) node.textContent = String(value);
+}
+function el(tag, attrs, children) {
+  const node = document.createElement(tag);
+  Object.entries(attrs || {}).forEach(([key, value]) => {
+    if (value === undefined || value === null) return;
+    if (key === 'class') node.className = value;
+    else node.setAttribute(key, value);
+  });
+  (children || []).forEach((child) => {
+    if (child === null || child === undefined || child === false) return;
+    node.append(child instanceof Node ? child : document.createTextNode(String(child)));
+  });
+  return node;
+}
+function toast(message) {
+  const node = $('toast');
+  node.textContent = message;
+  node.classList.add('show');
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => node.classList.remove('show'), 2800);
+}
+function announce(text) {
+  const node = $('announcer');
+  node.textContent = '';
+  node.textContent = text;
+}
+
+function loadState() {
+  let data = null;
+  try { data = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (err) { data = null; }
+  if (data && data.cfg) {
+    const names = data.cfg.camNames;
+    Object.assign(cfg, data.cfg);
+    cfg.camNames = Object.assign({L:'آستانه', C:'میانه باند', R:'انتهای باند', E:'نمای ۴'}, names || {});
+    const baseNames = {L:'آستانه', C:'میانه باند', R:'انتهای باند', E:'نمای ۴'};
+    Object.keys(baseNames).forEach((key) => {
+      if (/^[۰-۹0-9]{2}:[۰-۹0-9]{2}$/.test(cfg.camNames[key] || '')) cfg.camNames[key] = baseNames[key];
+    });
+  }
+  cfg.conf = clamp(Number(cfg.conf) || 0.3, 0.15, 0.75);
+  cfg.lookDeg = clamp(Number(cfg.lookDeg) || 270, 0, 359);
+  cfg.interval = clamp(Number(cfg.interval) || 400, 250, 900);
+  if (!['open','caution','inspection','closed'].includes(cfg.runwayState)) cfg.runwayState = 'open';
+  if (!['dry','wet','contaminated'].includes(cfg.surface)) cfg.surface = 'dry';
+  if (!['11L','11R','29L','29R'].includes(cfg.runway)) cfg.runway = '29R';
+  if (!['fusion','coco','coco_acc','yolo'].includes(cfg.modelMode)) cfg.modelMode = 'fusion';
+  if (!['restricted','caution','watch'].includes(cfg.zoneType)) cfg.zoneType = 'restricted';
+  if (data && Array.isArray(data.zones)) zones = sanitizeZones(data.zones);
+  else {
+    try { zones = sanitizeZones(JSON.parse(localStorage.getItem('ika_zones_v2') || '[]')); }
+    catch (err) { zones = []; }
+  }
+  incidents = Array.isArray(data && data.incidents) ? data.incidents.filter((item) => item && item.id && item.title).slice(0, 150) : [];
+  log = Array.isArray(data && data.log) ? data.log.filter((item) => item && item.text).slice(0, 120) : [];
+  checklist = (data && data.checklist) || {};
+  notes = (data && data.notes) || '';
+  shiftStart = (data && data.shiftStart) || Date.now();
+}
+function sanitizeZones(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((zone) => {
+    let x = Number(zone.x), y = Number(zone.y), w = Number(zone.w), h = Number(zone.h);
+    if (![x, y, w, h].every(Number.isFinite)) return null;
+    if (x > 1.5 || y > 1.5 || w > 1.5 || h > 1.5) { x /= 1920; y /= 360; w /= 1920; h /= 360; }
+    if (w < 0.005 || h < 0.005) return null;
+    return {
+      id: Number(zone.id) || Math.floor(Math.random() * 100000),
+      x: clamp(x, 0, 1), y: clamp(y, 0, 1), w: clamp(w, 0.005, 1), h: clamp(h, 0.005, 1),
+      type: ['restricted','caution','watch'].includes(zone.type) ? zone.type : 'restricted',
+      name: String(zone.name || 'منطقه').slice(0, 40)
+    };
+  }).filter(Boolean);
+}
+let saveTimer = 0;
+function dirty() { clearTimeout(saveTimer); saveTimer = setTimeout(persist, 220); }
+function persist() {
+  const payload = {
+    v: 2, cfg, zones,
+    incidents: incidents.slice(0, 150).map((item, index) => index < 25 ? item : Object.assign({}, item, {thumb:''})),
+    log: log.slice(0, 120).map((item, index) => index < 15 ? item : Object.assign({}, item, {thumb:''})),
+    checklist, notes, shiftStart
+  };
+  try { localStorage.setItem(KEY, JSON.stringify(payload)); }
+  catch (err) {
+    payload.incidents.forEach((item) => { item.thumb = ''; });
+    payload.log.forEach((item) => { item.thumb = ''; });
+    try { localStorage.setItem(KEY, JSON.stringify(payload)); } catch (err2) {}
+  }
+}
+
+function hydrate() {
+  document.querySelectorAll('[data-operator]').forEach((node) => { node.value = cfg.operator || ''; });
+  $('runwaySel').value = cfg.runway;
+  $('surfaceSel').value = cfg.surface;
+  $('zoneType').value = cfg.zoneType;
+  $('modelMode').value = cfg.modelMode;
+  $('notes').value = notes;
+  $('confSlider').value = String(Math.round(cfg.conf * 100));
+  $('lookSlider').value = String(cfg.lookDeg);
+  $('intervalSlider').value = String(cfg.interval);
+  CAMS.forEach((key) => { $('camName' + key).value = cfg.camNames[key] || ''; });
+  document.querySelectorAll('[data-flag]').forEach((node) => { node.checked = !!cfg[node.dataset.flag]; });
+  $('confVal').textContent = faNum($('confSlider').value) + '٪';
+  $('lookVal').textContent = faNum(cfg.lookDeg) + '°';
+  $('intervalVal').textContent = faNum(cfg.interval) + 'ms';
+}
+
+function attentionLevel() {
+  const rank = {info:0, low:1, medium:2, high:3, critical:4};
+  let level = 0;
+  incidents.forEach((item) => { if (item.status !== 'closed') level = Math.max(level, rank[item.severity] || 0); });
+  if (cfg.surface === 'contaminated') level = Math.max(level, 2);
+  if (cfg.surface === 'wet' && cfg.night) level = Math.max(level, 2);
+  if (level >= 4) return 'critical';
+  if (level >= 2) return 'watch';
+  return 'normal';
+}
+function syncChrome() {
+  document.body.dataset.runway = cfg.runwayState;
+  document.querySelectorAll('#stateSeg button').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.state === cfg.runwayState));
+  });
+  document.querySelectorAll('[data-flag]').forEach((node) => { node.checked = !!cfg[node.dataset.flag]; });
+  const attention = attentionLevel();
+  const attentionText = {normal:'عادی', watch:'هشیار', critical:'بحرانی'}[attention];
+  $('attentionPill').textContent = 'توجه ' + attentionText;
+  $('attentionPill').className = 'pill att-' + attention;
+  $('sceneTitle').textContent = 'نمای یکپارچه · باند ' + cfg.runway + ' · ' + runwayStateLabel();
+  $('compassChip').textContent = 'دید ' + faNum(cfg.lookDeg) + '°';
+  $('liveLabel').textContent = detectOn ? 'تشخیص فعال' : 'فقط نمایش';
+  $('liveLabel').className = detectOn ? 'live on' : 'live';
+  $('startBtn').disabled = detectOn;
+  $('stopBtn').disabled = !detectOn;
+  $('demoBtn').setAttribute('aria-pressed', demo.on ? 'true' : 'false');
+  $('demoBadge').hidden = !demo.on;
+  $('nightBtn').textContent = cfg.night ? 'حالت روز' : 'حالت شب';
+  $('nightBtn').setAttribute('aria-pressed', cfg.night ? 'true' : 'false');
+  $('zoneBtn').textContent = drawing ? 'انصراف از رسم' : 'رسم منطقه';
+  $('zoneBtn').setAttribute('aria-pressed', drawing ? 'true' : 'false');
+  stage.classList.toggle('drawing', drawing);
+  const openCount = incidents.filter((item) => item.status !== 'closed').length;
+  const freshCount = incidents.filter((item) => item.status === 'open').length;
+  const critical = incidents.some((item) => item.status === 'open' && item.severity === 'critical');
+  setText('statOpen', faNum(openCount));
+  setText('sumOpen', faNum(openCount));
+  setText('sumState', runwayStateLabel());
+  setText('sumAtt', attentionText);
+  setText('sumOp', cfg.operator || 'ثبت نشده');
+  $('badge').hidden = freshCount === 0;
+  $('badge').textContent = faNum(freshCount);
+  $('badge').classList.toggle('hot', critical);
+  document.title = critical ? '(' + faNum(freshCount) + ') هشدار — پایش باند' : 'سامانه پایش و ایمنی باند';
+  refreshBanner();
+}
+function refreshBanner() {
+  const item = incidents.find((inc) => inc.status === 'open' && inc.severity === 'critical');
+  const banner = $('alarmBanner');
+  banner.classList.toggle('show', !!item);
+  banner.textContent = item ? 'رخداد بحرانی — ' + item.title : '';
+}
+function tickClock() {
+  const now = new Date();
+  setText('clockLocal', now.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit', second:'2-digit'}));
+  setText('dateLocal', now.toLocaleDateString('fa-IR'));
+  setText('clockUtc', now.toLocaleTimeString('en-GB', {timeZone:'UTC', hour:'2-digit', minute:'2-digit', second:'2-digit'}) + ' UTC');
+  const duration = fmtDuration(Date.now() - shiftStart);
+  setText('shiftClock', duration);
+  setText('sumShift', duration);
+}
+
+function goto(view) {
+  if (!view) return;
+  currentView = view;
+  document.querySelectorAll('.view').forEach((node) => node.classList.toggle('active', node.id === 'view-' + view));
+  document.querySelectorAll('.navbtn').forEach((node) => node.classList.toggle('active', node.dataset.view === view));
+  document.querySelectorAll('[data-side]').forEach((node) => {
+    node.hidden = node.dataset.side !== 'all' && node.dataset.side !== view;
+  });
+}
+function pushLog(entry) {
+  log.unshift({id:uid('LOG'), ts:Date.now(), type:entry.type || 'info', text:entry.text || '', thumb:entry.thumb || ''});
+  if (log.length > 120) log.pop();
+  renderLogFull();
+  dirty();
+}
+function renderLogFull() {
+  ['logList', 'logFull'].forEach((id) => {
+    const box = $(id);
+    box.replaceChildren();
+    const slice = log.slice(0, id === 'logList' ? 8 : 80);
+    if (!slice.length) { box.append(el('div', {class:'muted'}, ['هنوز رویدادی ثبت نشده.'])); return; }
+    slice.forEach((entry) => box.append(logRow(entry)));
+  });
+}
+function logRow(entry) {
+  const row = el('div', {class:'log-row ' + (entry.type || '')}, [
+    el('time', null, [fmtTime(entry.ts)]),
+    el('div', null, [entry.text])
+  ]);
+  if (entry.thumb && String(entry.thumb).startsWith('data:image/')) {
+    const img = el('img', {alt:'', class:'shot'});
+    img.src = entry.thumb;
+    row.append(img);
+  }
+  return row;
+}
+
+function renderZones() {
+  const box = $('zoneList');
+  box.replaceChildren();
+  if (!zones.length) { box.append(el('p', {class:'muted'}, ['هنوز منطقه‌ای نیست.'])); return; }
+  zones.forEach((zone) => {
+    const row = el('div', {class:'zone-row'}, [
+      el('i', {class:'dot ' + zone.type}),
+      el('input', {value:zone.name, 'data-zone-name':zone.id, maxlength:'40', 'aria-label':'نام منطقه'}),
+      el('select', {'data-zone-type':zone.id, 'aria-label':'نوع منطقه'}, [
+        el('option', {value:'restricted'}, ['ممنوعه']),
+        el('option', {value:'caution'}, ['احتیاط']),
+        el('option', {value:'watch'}, ['پایش'])
+      ]),
+      el('button', {type:'button', class:'btn tiny danger', 'data-act':'del-zone', 'data-id':zone.id}, ['حذف'])
+    ]);
+    row.querySelector('select').value = zone.type;
+    box.append(row);
+  });
+}
+function renderChecklist() {
+  const box = $('checkList');
+  box.replaceChildren();
+  CHECKS.forEach(([id, label]) => {
+    const input = el('input', {type:'checkbox', 'data-check':id});
+    input.checked = !!checklist[id];
+    box.append(el('label', {class:'check'}, [input, label]));
+  });
+  renderShiftProgress();
+}
+function renderShiftProgress() {
+  const done = CHECKS.filter(([id]) => checklist[id]).length;
+  setText('checkProgress', faNum(done) + ' از ' + faNum(CHECKS.length));
+}
+function renderSamples() {
+  const box = $('sampleStrip');
+  SAMPLES.forEach((sample) => box.append(el('button', {type:'button', class:'btn tiny', 'data-act':'sample', 'data-src':sample[0]}, [sample[1]])));
+}
+function renderTax(query) {
+  const q = (query || '').trim().toLowerCase();
+  const grid = $('taxGrid');
+  grid.replaceChildren();
+  FOD_TAX.forEach((item) => {
+    if (q && (item[1] + ' ' + item[0]).toLowerCase().indexOf(q) === -1) return;
+    const hint = item[3] || (item[2] === 'high' ? 'بازرسی چشمی یا مدل اختصاصی' : 'خارج از مدل عمومی');
+    grid.append(el('article', {class:'tax ' + item[2]}, [
+      el('b', null, [item[1]]),
+      el('small', {dir:'ltr'}, [item[0]]),
+      el('em', null, [hint])
+    ]));
+  });
+}
+function passInc(item) {
+  if (incFilter === 'open') return item.status !== 'closed';
+  if (incFilter === 'critical') return item.severity === 'critical';
+  if (incFilter === 'fod') return item.kind === 'fod';
+  if (incFilter === 'wildlife') return item.kind === 'wildlife';
+  return true;
+}
+function renderIncidents() {
+  const buckets = {open:[], ack:[], closed:[]};
+  incidents.filter(passInc).forEach((item) => {
+    const key = item.status === 'ack' || item.status === 'closed' ? item.status : 'open';
+    buckets[key].push(item);
+  });
+  const mounts = {open:$('incOpen'), ack:$('incAck'), closed:$('incClosed')};
+  Object.keys(mounts).forEach((key) => {
+    mounts[key].replaceChildren();
+    if (!buckets[key].length) mounts[key].append(el('p', {class:'muted'}, ['موردی نیست.']));
+    buckets[key].forEach((item) => mounts[key].append(incidentCard(item)));
+  });
+  setText('cntOpen', faNum(buckets.open.length));
+  setText('cntAck', faNum(buckets.ack.length));
+  setText('cntClosed', faNum(buckets.closed.length));
+  document.querySelectorAll('[data-filter]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.filter === incFilter));
+  });
+}
+function incidentCard(item) {
+  const card = el('article', {class:'icard sev-' + item.severity + (item.id === activeIncId ? ' active' : ''), 'data-act':'pick-inc', 'data-id':item.id}, [
+    el('strong', null, [item.title]),
+    el('span', {class:'muted'}, [fmtTime(item.ts) + ' · ' + (SEV_FA[item.severity] || item.severity)])
+  ]);
+  if (item.thumb && String(item.thumb).startsWith('data:image/')) {
+    const img = el('img', {alt:'', class:'shot'});
+    img.src = item.thumb;
+    card.append(img);
+  }
+  const actions = el('div', {class:'row-actions'});
+  if (item.status === 'open') actions.append(el('button', {type:'button', class:'btn tiny primary', 'data-act':'ack', 'data-id':item.id}, ['تأیید']));
+  if (item.status !== 'closed') actions.append(el('button', {type:'button', class:'btn tiny', 'data-act':'close-inc', 'data-id':item.id}, ['بستن']));
+  if (item.status === 'closed') actions.append(el('button', {type:'button', class:'btn tiny', 'data-act':'reopen', 'data-id':item.id}, ['بازگشایی']));
+  card.append(actions);
+  return card;
+}
+function renderIncDetail() {
+  const box = $('incDetail');
+  box.replaceChildren();
+  const item = incidents.find((inc) => inc.id === activeIncId);
+  if (!item) { box.append(el('p', {class:'muted'}, ['یک کارت را انتخاب کنید.'])); return; }
+  const camera = item.camera === 'IMG' ? 'تصویر ثابت' : (cfg.camNames[item.camera] || item.camera || '—');
+  box.append(
+    el('strong', null, [item.title]),
+    el('p', {class:'muted'}, [fmtDate(item.ts) + ' ' + fmtTime(item.ts) + ' · ' + (SEV_FA[item.severity] || '') + ' · ' + (STATUS_FA[item.status] || '')]),
+    el('p', null, [item.detail || '']),
+    el('p', {class:'muted'}, ['دوربین: ' + camera + ' · مسیر ' + (item.trackId || '—')])
+  );
+  if (item.thumb && String(item.thumb).startsWith('data:image/')) {
+    const img = el('img', {alt:'نمای رخداد', class:'shot'});
+    img.src = item.thumb;
+    box.append(img);
+  }
+  const actions = el('div', {class:'row-actions'});
+  if (item.status === 'open') actions.append(el('button', {type:'button', class:'btn primary', 'data-act':'ack', 'data-id':item.id}, ['تأیید']));
+  if (item.status !== 'closed') actions.append(el('button', {type:'button', class:'btn', 'data-act':'close-inc', 'data-id':item.id}, ['بستن']));
+  if (item.status === 'closed') actions.append(el('button', {type:'button', class:'btn', 'data-act':'reopen', 'data-id':item.id}, ['بازگشایی']));
+  box.append(actions);
+}
+function setStatus(id, status) {
+  const item = incidents.find((inc) => inc.id === id);
+  if (!item) return;
+  item.status = status;
+  const verb = status === 'ack' ? 'تأیید شد: ' : status === 'closed' ? 'بسته شد: ' : 'باز شد: ';
+  pushLog({type:'system', text:verb + item.title});
+  renderIncidents();
+  renderIncDetail();
+  syncChrome();
+  if (modalIncId === id && status !== 'open') {
+    $('modal').hidden = true;
+    modalIncId = null;
+    pumpModal();
+  }
+}
+function createIncident(partial, silent) {
+  const inc = Object.assign({id:uid('INC'), ts:Date.now(), status:'open'}, partial);
+  incidents.unshift(inc);
+  if (incidents.length > 150) incidents.length = 150;
+  pushLog({type:'alarm', text:inc.title});
+  renderIncidents();
+  syncChrome();
+  dirty();
+  if (inc.severity === 'critical') { enqueueModal(inc); announce(inc.title); }
+  if (!silent && (inc.severity === 'critical' || inc.severity === 'high' || inc.severity === 'medium')) beep(inc.severity);
+  return inc;
+}
+function enqueueModal(inc) {
+  if (!inc || modalShown.has(inc.id)) return;
+  modalShown.add(inc.id);
+  critQueue.push(inc.id);
+  pumpModal();
+}
+function pumpModal() {
+  if (!$('modal').hidden) return;
+  while (critQueue.length) {
+    const id = critQueue.shift();
+    const inc = incidents.find((item) => item.id === id);
+    if (!inc || inc.status !== 'open' || inc.severity !== 'critical') continue;
+    showCriticalModal(inc);
+    return;
+  }
+}
+function showCriticalModal(inc) {
+  modalIncId = inc.id;
+  $('modalTitle').textContent = 'رخداد بحرانی';
+  const body = $('modalBody');
+  body.replaceChildren(el('p', null, [inc.title]), el('p', {class:'muted'}, [inc.detail || '']));
+  if (inc.thumb && String(inc.thumb).startsWith('data:image/')) {
+    const img = el('img', {class:'shot', alt:'نمای رخداد'});
+    img.src = inc.thumb;
+    body.append(img);
+  }
+  const actions = $('modalActions');
+  actions.replaceChildren(
+    el('button', {type:'button', class:'btn primary', 'data-act':'modal-ack'}, ['تأیید رخداد']),
+    el('button', {type:'button', class:'btn', 'data-act':'modal-later'}, ['بعداً'])
+  );
+  $('modal').hidden = false;
+}
+function dismissModal() {
+  $('modal').hidden = true;
+  modalIncId = null;
+  pumpModal();
+}
+
+function beep(kind) {
+  if (!cfg.audio) return;
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  if (!beep.ctx) beep.ctx = new AudioCtx();
+  const actx = beep.ctx;
+  if (actx.state === 'suspended') actx.resume();
+  const now = actx.currentTime;
+  const osc = actx.createOscillator();
+  const gain = actx.createGain();
+  osc.connect(gain); gain.connect(actx.destination);
+  osc.type = kind === 'critical' ? 'square' : 'sine';
+  const freq = kind === 'critical' ? 880 : kind === 'high' ? 660 : 440;
+  osc.frequency.setValueAtTime(freq, now);
+  if (kind === 'critical') osc.frequency.setValueAtTime(620, now + 0.14);
+  gain.gain.setValueAtTime(0.0001, now);
+  gain.gain.exponentialRampToValueAtTime(kind === 'medium' ? 0.04 : 0.09, now + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.0001, now + (kind === 'critical' ? 0.42 : 0.22));
+  osc.start(now);
+  osc.stop(now + 0.46);
+}
+
+function zrect(zone) {
+  return {x:zone.x * canvas.width, y:zone.y * canvas.height, w:zone.w * canvas.width, h:zone.h * canvas.height};
+}
+function rectsOverlap(a, b) {
+  return !(a.x + a.w < b.x || a.x > b.x + b.w || a.y + a.h < b.y || a.y > b.y + b.h);
+}
+function overlapRatio(a, b) {
+  const x1 = Math.max(a.x, b.x), y1 = Math.max(a.y, b.y);
+  const x2 = Math.min(a.x + a.w, b.x + b.w), y2 = Math.min(a.y + a.h, b.y + b.h);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  return inter / Math.max(1, a.w * a.h);
+}
+function boxOnCanvas(p) {
+  return overlapRatio({x:p.bx, y:p.by, w:p.bw, h:p.bh}, {x:0, y:0, w:canvas.width, h:canvas.height});
+}
+function zoneHits(p) {
+  const rect = {x:p.bx, y:p.by, w:p.bw, h:p.bh};
+  return zones.map((zone) => ({zone, rect:zrect(zone)})).filter((item) => overlapRatio(rect, item.rect) >= 0.3);
+}
+function evaluateThreat(p) {
+  const hits = zoneHits(p);
+  const restricted = hits.filter((item) => item.zone.type === 'restricted');
+  const caution = hits.filter((item) => item.zone.type === 'caution');
+  const zone = (restricted[0] || caution[0] || {}).zone;
+  const zname = zone ? zone.name : '';
+  const zid = zone ? String(zone.id) : '';
+  const state = cfg.runwayState;
+  if (p.class === 'person' && restricted.length) return pack(state === 'inspection' || state === 'closed' ? 'high' : 'critical', 'incursion', 'انسان در منطقه ممنوعه: ' + zname, zid);
+  if (p.class === 'airplane' && restricted.length) return pack('critical', 'incursion', 'هواپیما در منطقه ممنوعه: ' + zname, zid);
+  if (family(p.class) === 'vehicle' && restricted.length) return pack('high', 'incursion', 'وسیله در منطقه ممنوعه: ' + zname, zid);
+  if (family(p.class) === 'fod' && restricted.length) return pack('high', 'fod', 'کاندید FOD در منطقه ممنوعه: ' + labelOf(p.class), zid);
+  if (family(p.class) === 'wildlife' && restricted.length) return pack('high', 'wildlife', 'حیات‌وحش در منطقه ممنوعه: ' + labelOf(p.class), zid);
+  if (p.class === 'person' && state === 'open' && cfg.alertPersonGlobal) return pack('critical', 'incursion', 'انسان در نمای باند در وضعیت باز', '');
+  if (p.class === 'person' && caution.length && state !== 'inspection') return pack('high', 'incursion', 'انسان در منطقه احتیاط: ' + zname, zid);
+  if (p.class === 'airplane' && caution.length) return pack('high', 'proximity', 'هواپیما در منطقه احتیاط: ' + zname, zid);
+  if (family(p.class) === 'wildlife' && (state === 'open' || state === 'caution')) return pack('medium', 'wildlife', 'حیات‌وحش در محدوده: ' + labelOf(p.class), zid);
+  if (family(p.class) === 'fod') return pack(state === 'closed' ? 'low' : 'medium', 'fod', 'کاندید FOD: ' + labelOf(p.class), zid);
+  if (family(p.class) === 'vehicle' && caution.length && state === 'open') return pack('medium', 'vehicle', 'وسیله در منطقه احتیاط: ' + zname, zid);
+  return null;
+}
+function pack(severity, kind, title, zone) { return {severity, kind, title, zone}; }
+function liveKeys() {
+  return demo.on && demo.keys.length ? demo.keys : CAMS;
+}
+function camKeyAt(p) {
+  const keys = liveKeys();
+  const n = keys.length || 1;
+  const x = p.bx + p.bw / 2;
+  const index = Math.min(n - 1, Math.max(0, Math.floor((x / (canvas.width || 1)) * n)));
+  return keys[index] || keys[0];
+}
+function recentlyRaised(p, kind) {
+  const now = Date.now();
+  const cx = p.bx + p.bw / 2;
+  const cy = p.by + p.bh / 2;
+  const limit = Math.max(180, canvas.width * 0.08);
+  return incidents.some((item) => item.kind === kind && item.className === p.class && item.status !== 'closed' && now - item.ts < 15000 && Math.hypot((item.cx || 0) - cx, (item.cy || 0) - cy) < limit);
+}
+function applyThreatUpdate(existing, threat, p) {
+  const rank = {info:0, low:1, medium:2, high:3, critical:4};
+  const better = (rank[threat.severity] || 0) > (rank[existing.severity] || 0);
+  const entered = !!(threat.zone && threat.zone !== existing.zone);
+  if (!better && !entered) return false;
+  const becameCritical = better && threat.severity === 'critical' && existing.severity !== 'critical';
+  if (better) existing.severity = threat.severity;
+  existing.title = threat.title;
+  existing.zone = threat.zone || existing.zone;
+  existing.cx = p.bx + p.bw / 2;
+  existing.cy = p.by + p.bh / 2;
+  existing.trackId = p.trackId || existing.trackId;
+  renderIncidents();
+  if (activeIncId === existing.id) renderIncDetail();
+  syncChrome();
+  dirty();
+  if (becameCritical) {
+    existing.status = 'open';
+    enqueueModal(existing);
+  }
+  return better;
+}
+function openThreats(preds) {
+  let loudest = '';
+  const rank = {medium:2, high:3, critical:4};
+  preds.forEach((p) => {
+    if (boxOnCanvas(p) < 0.4) return;
+    const threat = evaluateThreat(p);
+    if (!threat) return;
+    if (p.trackId) {
+      const existing = incidents.find((item) => item.trackId === p.trackId && item.kind === threat.kind && item.status !== 'closed');
+      if (existing) {
+        const raisedLevel = applyThreatUpdate(existing, threat, p);
+        if (raisedLevel && (rank[threat.severity] || 0) > (rank[loudest] || 0)) loudest = threat.severity;
+        return;
+      }
+    }
+    const openSame = incidents.find((item) => item.status !== 'closed' && item.className === p.class && item.kind === threat.kind);
+    if (openSame) {
+      const raisedLevel = applyThreatUpdate(openSame, threat, p);
+      if (raisedLevel && (rank[threat.severity] || 0) > (rank[loudest] || 0)) loudest = threat.severity;
+      return;
+    }
+    const key = p.trackId + ':' + threat.kind + ':' + (threat.zone || '');
+    if (raised.has(key) || recentlyRaised(p, threat.kind)) { raised.add(key); return; }
+    raised.add(key);
+    if (threat.severity === 'low' || threat.severity === 'info') { pushLog({type:'info', text:threat.title}); return; }
+    createIncident({
+      severity: threat.severity, kind: threat.kind, title: threat.title,
+      detail: 'اطمینان ' + faNum(p.score * 100) + '٪ · باند ' + cfg.runway + ' · ' + runwayStateLabel() + ' · سطح ' + surfaceLabel(),
+      className: p.class, score: p.score, trackId: p.trackId || '', camera: camKeyAt(p),
+      zone: threat.zone || '', cx: p.bx + p.bw / 2, cy: p.by + p.bh / 2, thumb: ''
+    }, true);
+    thumbPending = true;
+    if ((rank[threat.severity] || 0) > (rank[loudest] || 0)) loudest = threat.severity;
+  });
+  if (loudest) beep(loudest);
+}
+function flushThumbs() {
+  if (!thumbPending) return;
+  thumbPending = false;
+  let shot = '';
+  try { shot = thumbData(); } catch (err) { return; }
+  const now = Date.now();
+  let changed = false;
+  incidents.forEach((inc) => {
+    if (!inc.thumb && now - inc.ts < 4000) { inc.thumb = shot; changed = true; }
+  });
+  if (!changed) return;
+  renderIncidents();
+  const body = $('modalBody');
+  if (modalIncId && body && !body.querySelector('img')) {
+    const inc = incidents.find((item) => item.id === modalIncId);
+    if (inc && inc.thumb) {
+      const img = el('img', {class:'shot', alt:'نمای رخداد'});
+      img.src = inc.thumb;
+      body.append(img);
+    }
+  }
+  dirty();
+}
+function safeThumb() { try { return thumbData(); } catch (err) { return ''; } }
+function thumbData() {
+  const shot = document.createElement('canvas');
+  shot.width = 480;
+  shot.height = Math.max(1, Math.round(480 * canvas.height / canvas.width));
+  shot.getContext('2d').drawImage(canvas, 0, 0, shot.width, shot.height);
+  return shot.toDataURL('image/jpeg', 0.62);
+}
+
+function thresholdFor(name) {
+  if (name === 'airplane') return Math.max(0.2, cfg.conf - 0.05);
+  if (VEHICLE.has(name)) return Math.max(0.18, cfg.conf - 0.02);
+  if (FOD.has(name) || WILDLIFE.has(name)) return Math.max(0.15, cfg.conf - 0.05);
+  return cfg.conf;
+}
+function allowed(p) {
+  if (!p || p.score < thresholdFor(p.class)) return false;
+  if (p.class === 'person') return cfg.person;
+  if (p.class === 'airplane') return cfg.airplane;
+  if (VEHICLE.has(p.class)) return cfg.vehicle;
+  if (WILDLIFE.has(p.class)) return cfg.wildlife;
+  if (FOD.has(p.class)) return cfg.fod;
+  return false;
+}
+function iouBox(a, b) {
+  const x1 = Math.max(a.bx, b.bx), y1 = Math.max(a.by, b.by);
+  const x2 = Math.min(a.bx + a.bw, b.bx + b.bw), y2 = Math.min(a.by + a.bh, b.by + b.bh);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  const uni = a.bw * a.bh + b.bw * b.bh - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+function assignTracks(preds) {
+  const now = performance.now();
+  preds.forEach((p) => { p.trackId = 0; });
+  tracks.forEach((track) => { track.used = false; });
+  preds.forEach((p) => {
+    let best = null;
+    let bestScore = 0;
+    tracks.forEach((track) => {
+      if (track.used || track.cls !== p.class) return;
+      const overlap = iouBox(track, p);
+      const dist = Math.hypot((track.bx + track.bw / 2) - (p.bx + p.bw / 2), (track.by + track.bh / 2) - (p.by + p.bh / 2));
+      const norm = dist / Math.max(canvas.width, 1);
+      const score = overlap > 0 ? overlap : (norm < 0.08 ? 0.3 - norm : 0);
+      if (score > bestScore) { bestScore = score; best = track; }
+    });
+    if (best && bestScore >= 0.15) {
+      best.used = true;
+      p.trackId = best.id;
+      best.bx = p.bx; best.by = p.by; best.bw = p.bw; best.bh = p.bh;
+      best.last = now; best.hits += 1;
+      if (best.hits % 2 === 0) {
+        best.hist.push({x:p.bx + p.bw / 2, y:p.by + p.bh / 2});
+        if (best.hist.length > 24) best.hist.shift();
+      }
+    }
+  });
+  for (let i = tracks.length - 1; i >= 0; i -= 1) {
+    if (!tracks[i].used && now - tracks[i].last > 1800) tracks.splice(i, 1);
+  }
+  preds.forEach((p) => {
+    if (p.trackId) return;
+    const id = nextTrack++;
+    p.trackId = id;
+    tracks.push({id, cls:p.class, bx:p.bx, by:p.by, bw:p.bw, bh:p.bh, last:now, hits:1, hist:[{x:p.bx + p.bw / 2, y:p.by + p.bh / 2}]});
+  });
+}
+function updateStats(preds) {
+  const counts = {air:0, vehicle:0, person:0, wildlife:0, fod:0};
+  preds.forEach((p) => {
+    const kind = family(p.class);
+    if (counts[kind] !== undefined) counts[kind] += 1;
+    else if (kind === 'air') counts.air += 1;
+  });
+  setText('statAir', faNum(counts.air));
+  setText('statVeh', faNum(counts.vehicle));
+  setText('statPerson', faNum(counts.person));
+  setText('statWild', faNum(counts.wildlife));
+  setText('statFod', faNum(counts.fod));
+}
+function refreshSelection() {
+  const picked = latest.find((item) => item.trackId === selectedId);
+  const sig = picked ? [picked.trackId, picked.class, Math.round(picked.score * 100), Math.round(picked.bx), Math.round(picked.by)].join(':') : 'none';
+  if (sig === refreshSelection.sig) return;
+  refreshSelection.sig = sig;
+  $('selEmpty').hidden = !!picked;
+  $('selCard').hidden = !picked;
+  if (!picked) return;
+  const hit = zoneHits(picked)[0];
+  $('selTitle').textContent = labelOf(picked.class) + ' · ' + faNum(picked.score * 100) + '٪';
+  $('selMeta').textContent = 'مسیر ' + picked.trackId + ' · ' + (cfg.camNames[camKeyAt(picked)] || '') + (hit ? ' · ' + hit.zone.name : ' · خارج از منطقه');
+}
+
+function resizeCanvas() {
+  const rect = stage.getBoundingClientRect();
+  if (rect.width < 20 || rect.height < 20) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  const w = Math.round(rect.width * dpr);
+  const h = Math.round(rect.height * dpr);
+  if (canvas.width !== w || canvas.height !== h) { canvas.width = w; canvas.height = h; }
+}
+function drawRunway(night) {
+  const w = canvas.width, h = canvas.height;
+  const sky = ctx.createLinearGradient(0, 0, 0, h);
+  sky.addColorStop(0, night ? '#070b12' : '#243140');
+  sky.addColorStop(0.32, night ? '#121a26' : '#1a242f');
+  sky.addColorStop(1, '#101418');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, w, h);
+  const top = h * 0.30, bot = h * 0.90;
+  ctx.fillStyle = night ? '#1a1e24' : '#2c3138';
+  ctx.fillRect(0, top, w, bot - top);
+  ctx.strokeStyle = 'rgba(255,255,255,.8)';
+  ctx.lineWidth = Math.max(2, h * 0.008);
+  ctx.beginPath();
+  ctx.moveTo(0, top + 2); ctx.lineTo(w, top + 2);
+  ctx.moveTo(0, bot - 2); ctx.lineTo(w, bot - 2);
+  ctx.stroke();
+  ctx.strokeStyle = night ? 'rgba(224,177,90,.9)' : 'rgba(255,255,255,.75)';
+  ctx.setLineDash([w * 0.028, w * 0.016]);
+  ctx.lineWidth = Math.max(2, h * 0.01);
+  ctx.beginPath();
+  ctx.moveTo(0, (top + bot) / 2); ctx.lineTo(w, (top + bot) / 2);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(255,255,255,.85)';
+  const barW = w * 0.012, gap = w * 0.008;
+  for (let i = 0; i < 6; i += 1) ctx.fillRect(w * 0.04 + i * (barW + gap), top + (bot - top) * 0.18, barW, (bot - top) * 0.64);
+  const aimW = w * 0.035, aimH = (bot - top) * 0.2;
+  ctx.fillRect(w * 0.46, top + (bot - top) * 0.2, aimW, aimH);
+  ctx.fillRect(w * 0.46, bot - (bot - top) * 0.2 - aimH, aimW, aimH);
+  const t = performance.now() / 1000;
+  for (let i = 0; i < 26; i += 1) {
+    const x = (i + 0.5) * w / 26;
+    const twinkle = night ? 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(t * 3 + i)) : 0.35;
+    ctx.fillStyle = night ? 'rgba(255,196,120,' + twinkle + ')' : 'rgba(255,255,255,' + twinkle + ')';
+    ctx.beginPath();
+    ctx.arc(x, top - h * 0.018, Math.max(1.5, h * 0.007), 0, Math.PI * 2);
+    ctx.arc(x, bot + h * 0.018, Math.max(1.5, h * 0.007), 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+function drawDividers() {
+  const keys = liveKeys();
+  const n = keys.length;
+  const w = canvas.width, h = canvas.height;
+  ctx.strokeStyle = 'rgba(126,200,227,.28)';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let i = 1; i < n; i += 1) { ctx.moveTo(i * w / n, 0); ctx.lineTo(i * w / n, h); }
+  ctx.stroke();
+  ctx.save();
+  ctx.font = '600 14px Vazirmatn, Tahoma, sans-serif';
+  ctx.fillStyle = 'rgba(232,238,244,.92)';
+  ctx.textBaseline = 'top';
+  ctx.direction = 'rtl';
+  ctx.textAlign = 'right';
+  keys.forEach((key, index) => ctx.fillText((demo.labels && demo.labels[key]) || cfg.camNames[key] || key, (index + 1) * w / n - 10, 10));
+  ctx.restore();
+}
+function fitFrame(vw, vh, w, h) {
+  const scale = Math.min(w / vw, h / vh);
+  const dw = vw * scale, dh = vh * scale;
+  return {scale, dx:(w - dw) / 2, dy:(h - dh) / 2, dw, dh};
+}
+function drawCover(video, x, y, w, h) {
+  if (!video || video.readyState < 2 || !video.videoWidth) return false;
+  const fit = fitFrame(video.videoWidth, video.videoHeight, w, h);
+  ctx.save();
+  if (cfg.night) ctx.filter = 'grayscale(.75) contrast(1.2) brightness(.86)';
+  ctx.drawImage(video, 0, 0, video.videoWidth, video.videoHeight, x + fit.dx, y + fit.dy, fit.dw, fit.dh);
+  ctx.restore();
+  return true;
+}
+function drawSlate(x, w) {
+  ctx.fillStyle = '#0c1218';
+  ctx.fillRect(x, 0, w, canvas.height);
+  ctx.save();
+  ctx.fillStyle = 'rgba(232,238,244,.55)';
+  ctx.font = '600 16px Vazirmatn, Tahoma, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.direction = 'rtl';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('بدون سیگنال', x + w / 2, canvas.height / 2);
+  ctx.restore();
+}
+function drawZones() {
+  const colors = {restricted:'#ff5d5d', caution:'#f0b429', watch:'#7ec8e3'};
+  zones.forEach((zone) => {
+    const rect = zrect(zone);
+    const color = colors[zone.type] || colors.restricted;
+    ctx.save();
+    ctx.fillStyle = hexAlpha(color, 0.16);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 5]);
+    ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.strokeRect(rect.x, rect.y, rect.w, rect.h);
+    ctx.setLineDash([]);
+    ctx.direction = 'rtl';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.font = '600 13px Vazirmatn, Tahoma, sans-serif';
+    ctx.fillStyle = color;
+    ctx.fillText(zone.name, rect.x + rect.w - 8, rect.y + 6);
+    ctx.restore();
+  });
+  if (draft) {
+    ctx.save();
+    ctx.strokeStyle = '#e0b15a';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 4]);
+    ctx.strokeRect(draft.x, draft.y, draft.w, draft.h);
+    ctx.restore();
+  }
+}
+function drawTrails() {
+  tracks.forEach((track) => {
+    if (track.hist.length < 2) return;
+    if (track.cls !== 'airplane' && track.cls !== 'person' && family(track.cls) !== 'vehicle') return;
+    ctx.beginPath();
+    track.hist.forEach((point, index) => index ? ctx.lineTo(point.x, point.y) : ctx.moveTo(point.x, point.y));
+    ctx.strokeStyle = colorOf(track.cls);
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  });
+}
+function drawOneBox(g, p, force) {
+  const color = colorOf(p.class);
+  const selected = g === ctx && p.trackId && p.trackId === selectedId;
+  g.save();
+  if (force || cfg.boxes) {
+    g.lineWidth = selected ? 5 : 3;
+    g.strokeStyle = 'rgba(0,0,0,.55)';
+    g.strokeRect(p.bx, p.by, p.bw, p.bh);
+    g.lineWidth = selected ? 2.5 : 1.6;
+    g.strokeStyle = color;
+    g.strokeRect(p.bx, p.by, p.bw, p.bh);
+  }
+  if (force || cfg.labels) {
+    const text = labelOf(p.class) + ' ' + faNum(p.score * 100) + '٪';
+    g.font = '600 13px Vazirmatn, Tahoma, sans-serif';
+    g.direction = 'rtl';
+    g.textAlign = 'right';
+    g.textBaseline = 'middle';
+    const width = Math.ceil(g.measureText(text).width) + 14;
+    const viewW = g.canvas.width || canvas.width;
+    const x = Math.max(2, Math.min(p.bx, viewW - width - 2));
+    const y = p.by < 22 ? Math.min(p.by + p.bh, (g.canvas.height || canvas.height) - 4) : p.by;
+    g.fillStyle = color;
+    g.fillRect(x, y - 16, width, 20);
+    g.fillStyle = '#14180f';
+    g.fillText(text, x + width - 7, y - 6);
+  }
+  g.restore();
+}
+function drawSprites() {
+  const w = canvas.width, h = canvas.height;
+  demoObjects.forEach((obj) => {
+    if (!allowed(obj)) return;
+    const x = obj.x * w, y = obj.y * h, bw = obj.w * w, bh = obj.h * h;
+    ctx.save();
+    ctx.translate(x + bw / 2, y + bh / 2);
+    ctx.fillStyle = colorOf(obj.class);
+    ctx.globalAlpha = 0.92;
+    if (obj.class === 'airplane') {
+      ctx.beginPath();
+      ctx.moveTo(-bw / 2, 0); ctx.lineTo(bw / 2 - 8, -bh * 0.18); ctx.lineTo(bw / 2, 0); ctx.lineTo(bw / 2 - 8, bh * 0.18);
+      ctx.closePath(); ctx.fill();
+      ctx.fillRect(-bw * 0.05, -bh / 2, bw * 0.12, bh);
+    } else if (obj.class === 'person') {
+      ctx.beginPath(); ctx.arc(0, -bh * 0.32, Math.max(3, bw * 0.45), 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(-bw * 0.35, -bh * 0.12, bw * 0.7, bh * 0.62);
+    } else if (obj.class === 'bird') {
+      ctx.beginPath(); ctx.moveTo(-bw / 2, 0); ctx.quadraticCurveTo(0, -bh, bw / 2, 0);
+      ctx.strokeStyle = ctx.fillStyle; ctx.lineWidth = 2; ctx.stroke();
+    } else if (family(obj.class) === 'vehicle') {
+      ctx.fillRect(-bw / 2, -bh / 2, bw, bh * 0.72);
+    } else ctx.fillRect(-bw / 2, -bh / 2, bw, bh);
+    ctx.restore();
+  });
+}
+let demoStamp = 0;
+function stepDemo(now) {
+  const dt = demoStamp ? Math.min(50, now - demoStamp) : 16.7;
+  demoStamp = now;
+  const k = dt / 16.67;
+  demoObjects.forEach((obj) => {
+    obj.x += obj.vx * k;
+    obj.y += obj.vy * k;
+    if (obj.vy) {
+      if (obj.y < 0.08) { obj.y = 0.08; obj.vy = Math.abs(obj.vy); }
+      else if (obj.y > 0.28) { obj.y = 0.28; obj.vy = -Math.abs(obj.vy); }
+    }
+    const span = obj.w + 0.02;
+    if (obj.x > 1.02) obj.x = -span;
+    if (obj.x < -span) obj.x = 1.02;
+  });
+}
+function buildDemoPreds() {
+  const w = canvas.width, h = canvas.height;
+  return demoObjects.filter(allowed).map((obj) => ({
+    class: obj.class, score: obj.score, bx: obj.x * w, by: obj.y * h, bw: obj.w * w, bh: obj.h * h
+  }));
+}
+let hintOn = null;
+function setHint(on) {
+  if (hintOn === on) return;
+  hintOn = on;
+  $('emptyHint').classList.toggle('show', on);
+}
+let fpsCount = 0;
+let fpsStamp = performance.now();
+function frame() {
+  resizeCanvas();
+  const has = hasSignal();
+  let demoDue = null;
+  if (demo.on && demo.keys.length) {
+    drawLivePanes(demo.keys);
+    if (detectOn) detectTick();
+  } else if (demo.on) {
+    stepDemo(performance.now());
+    drawRunway(cfg.night);
+    drawSprites();
+    const preds = buildDemoPreds();
+    assignTracks(preds);
+    latest = preds;
+    const now = performance.now();
+    if (now - lastLogic > 200) {
+      lastLogic = now;
+      updateStats(preds);
+      refreshSelection();
+      if (detectOn) demoDue = preds;
+    }
+  } else if (has) {
+    drawLivePanes(CAMS);
+    if (detectOn) detectTick();
+  } else {
+    drawRunway(true);
+    latest = [];
+    updateStats([]);
+  }
+  drawDividers();
+  drawZones();
+  if (demo.on || (has && detectOn)) {
+    if (cfg.trails) drawTrails();
+    if (cfg.boxes || cfg.labels) latest.forEach((p) => drawOneBox(ctx, p, false));
+  }
+  if (demoDue) openThreats(demoDue);
+  flushThumbs();
+  setHint(!demo.on && !has);
+  fpsCount += 1;
+  const now = performance.now();
+  if (now - fpsStamp > 500) {
+    const fps = Math.round(fpsCount * 1000 / (now - fpsStamp));
+    fpsCount = 0; fpsStamp = now;
+    const infer = lastInferMs ? ' · استنتاج ' + faNum(lastInferMs) + 'ms' : '';
+    setText('hudPerf', 'رندر ' + faNum(fps) + infer);
+  }
+  requestAnimationFrame(frame);
+}
+
+function drawLivePanes(keys) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const pane = canvas.width / keys.length;
+  keys.forEach((key, index) => {
+    if (!drawCover(vids[key], index * pane, 0, pane, canvas.height)) drawSlate(index * pane, pane);
+  });
+}
+function hasSignal() {
+  return liveKeys().some((key) => vids[key] && vids[key].readyState >= 2 && vids[key].videoWidth);
+}
+function setCamUi(key, on, text) {
+  $('st' + key).textContent = on ? text : 'بدون سیگنال';
+  $('st' + key).classList.toggle('on', !!on);
+  $('led' + key).classList.toggle('on', !!on);
+}
+function refreshSources() {
+  const count = CAMS.filter((key) => vids[key].srcObject || vids[key].currentSrc || vids[key].src).length;
+  setText('sourceHint', count ? faNum(count) + ' منبع وصل است' : 'هیچ منبعی وصل نیست');
+}
+function stopCam(key) {
+  if (streams[key]) { streams[key].getTracks().forEach((track) => track.stop()); streams[key] = null; }
+  const video = vids[key];
+  video.pause();
+  video.srcObject = null;
+  video.removeAttribute('src');
+  video.load();
+  if (objectUrls[key]) { URL.revokeObjectURL(objectUrls[key]); objectUrls[key] = null; }
+  camCache[key] = {t:0, items:[]};
+  setCamUi(key, false, '');
+  setText('res' + key, '—');
+}
+async function loadUrl(key, url, label) {
+  stopCam(key);
+  const video = vids[key];
+  video.loop = true;
+  video.muted = true;
+  video.preload = 'auto';
+  video.src = url;
+  setCamUi(key, true, label || 'در حال پخش');
+  try { await video.play(); } catch (err) { video.play().catch(() => {}); }
+  refreshSources();
+}
+async function loadFile(key, file) {
+  stopCam(key);
+  objectUrls[key] = URL.createObjectURL(file);
+  vids[key].src = objectUrls[key];
+  vids[key].loop = true;
+  await vids[key].play();
+  setCamUi(key, true, file.name.slice(0, 22));
+  refreshSources();
+  pushLog({type:'system', text:'ویدیو روی ' + (cfg.camNames[key] || key)});
+}
+async function loadWebcam(key) {
+  try {
+    stopCam(key);
+    streams[key] = await navigator.mediaDevices.getUserMedia({video:{width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    vids[key].srcObject = streams[key];
+    await vids[key].play();
+    setCamUi(key, true, 'وب‌کم');
+    refreshSources();
+    pushLog({type:'system', text:'وب‌کم روی ' + (cfg.camNames[key] || key)});
+  } catch (err) { toast('وب‌کم در دسترس نیست'); }
+}
+async function loadScreen(key) {
+  try {
+    stopCam(key);
+    streams[key] = await navigator.mediaDevices.getDisplayMedia({video:true, audio:false});
+    const track = streams[key].getVideoTracks()[0];
+    if (track) track.addEventListener('ended', () => { stopCam(key); refreshSources(); });
+    vids[key].srcObject = streams[key];
+    await vids[key].play();
+    setCamUi(key, true, 'صفحه');
+    refreshSources();
+    pushLog({type:'system', text:'اشتراک صفحه روی ' + (cfg.camNames[key] || key)});
+  } catch (err) {
+    if (!err || err.name !== 'NotAllowedError') toast('اشتراک صفحه انجام نشد');
+  }
+}
+
+function mergeDets(lists) {
+  const all = [];
+  lists.forEach((list) => (list || []).forEach((item) => {
+    if (item && item.bbox) all.push({class:item.class, score:item.score, bbox:item.bbox.slice()});
+  }));
+  all.sort((a, b) => b.score - a.score);
+  const kept = [];
+  all.forEach((item) => {
+    const overlap = kept.some((prev) => prev.class === item.class && iouArr(prev.bbox, item.bbox) > 0.45);
+    if (!overlap) kept.push(item);
+  });
+  return kept;
+}
+function iouArr(a, b) {
+  const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+  const x2 = Math.min(a[0] + a[2], b[0] + b[2]), y2 = Math.min(a[1] + a[3], b[1] + b[3]);
+  const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+  const uni = a[2] * a[3] + b[2] * b[3] - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+function mapPred(item, key) {
+  const video = vids[key];
+  const keys = liveKeys();
+  const index = keys.indexOf(key);
+  if (index < 0 || !video.videoWidth) return null;
+  const pane = canvas.width / keys.length;
+  const fit = fitFrame(video.videoWidth, video.videoHeight, pane, canvas.height);
+  const [x, y, bw, bh] = item.bbox;
+  return {class:item.class, score:item.score, bx:index * pane + fit.dx + x * fit.scale, by:fit.dy + y * fit.scale, bw:bw * fit.scale, bh:bh * fit.scale};
+}
+function mergeCache() {
+  const now = Date.now();
+  const life = Math.max(1800, cfg.interval * 4);
+  return liveKeys().flatMap((key) => now - camCache[key].t < life ? camCache[key].items : []);
+}
+async function detectTick() {
+  if (!detectOn || detecting) return;
+  const now = performance.now();
+  const gap = Math.max(cfg.interval, (lastInferMs || 0) + 280);
+  if (now - lastDetect < gap) return;
+  const ready = liveKeys().filter((key) => vids[key].readyState >= 2 && vids[key].videoWidth);
+  if (!ready.length || (!cocoLite && !cocoAcc && !yoloSession)) return;
+  detecting = true;
+  lastDetect = now;
+  const key = ready[camCursor % ready.length];
+  camCursor += 1;
+  const started = performance.now();
+  try {
+    const found = await detectOnSource(vids[key]);
+    camCache[key] = {t:Date.now(), items:found.map((item) => mapPred(item, key)).filter((item) => item && item.bw > 4 && item.bh > 4)};
+    const preds = mergeCache();
+    assignTracks(preds);
+    latest = preds;
+    updateStats(preds);
+    openThreats(preds);
+    refreshSelection();
+    lastInferMs = Math.round(performance.now() - started);
+  } catch (err) {
+    diag.error = String(err && err.message ? err.message : err);
+    console.warn(err);
+  } finally { detecting = false; }
+}
+async function detectOnSource(source) {
+  const mode = cfg.modelMode;
+  const jobs = [];
+  if (mode !== 'yolo') {
+    const model = mode === 'coco_acc' && cocoAcc ? cocoAcc : cocoLite;
+    if (model) jobs.push(model.detect(source, 30, Math.min(0.2, cfg.conf)));
+  }
+  if ((mode === 'yolo' || mode === 'fusion') && yoloSession) jobs.push(detectYolo(source));
+  if (!jobs.length) return [];
+  const parts = await Promise.all(jobs);
+  return mergeDets(parts).filter(allowed);
+}
+function letterbox(source, size) {
+  const sw = source.videoWidth || source.naturalWidth || source.width;
+  const sh = source.videoHeight || source.naturalHeight || source.height;
+  if (!sw || !sh) return null;
+  lbCanvas.width = size; lbCanvas.height = size;
+  if (!lbCtx) lbCtx = lbCanvas.getContext('2d', {willReadFrequently:true});
+  lbCtx.fillStyle = 'rgb(114,114,114)';
+  lbCtx.fillRect(0, 0, size, size);
+  const scale = Math.min(size / sw, size / sh);
+  const nw = Math.round(sw * scale), nh = Math.round(sh * scale);
+  const dx = Math.floor((size - nw) / 2), dy = Math.floor((size - nh) / 2);
+  lbCtx.drawImage(source, 0, 0, sw, sh, dx, dy, nw, nh);
+  return {scale, dx, dy};
+}
+function canvasToTensor(layout, size) {
+  const pixels = lbCtx.getImageData(0, 0, size, size).data;
+  const plane = size * size;
+  const out = new Float32Array(plane * 3);
+  for (let i = 0; i < plane; i += 1) {
+    const p = i * 4;
+    if (layout === 'nchw') {
+      out[i] = pixels[p] / 255;
+      out[plane + i] = pixels[p + 1] / 255;
+      out[2 * plane + i] = pixels[p + 2] / 255;
+    } else {
+      out[i * 3] = pixels[p] / 255;
+      out[i * 3 + 1] = pixels[p + 1] / 255;
+      out[i * 3 + 2] = pixels[p + 2] / 255;
+    }
+  }
+  return out;
+}
+function nms(boxes, scores, classes, thr) {
+  const order = scores.map((score, index) => index).sort((a, b) => scores[b] - scores[a]);
+  const keep = [];
+  const dead = new Set();
+  order.forEach((i) => {
+    if (dead.has(i)) return;
+    keep.push(i);
+    const a = boxes[i];
+    order.forEach((j) => {
+      if (j === i || dead.has(j) || classes[i] !== classes[j]) return;
+      const b = boxes[j];
+      const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+      const x2 = Math.min(a[2], b[2]), y2 = Math.min(a[3], b[3]);
+      const inter = Math.max(0, x2 - x1) * Math.max(0, y2 - y1);
+      const uni = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter;
+      if (uni > 0 && inter / uni > thr) dead.add(j);
+    });
+  });
+  return keep;
+}
+async function tensorValues(tensor) {
+  if (!tensor) return null;
+  if (typeof tensor.getData === 'function') return tensor.getData();
+  return tensor.data && typeof tensor.data.then === 'function' ? tensor.data : tensor.data;
+}
+async function parseYolo(outputMap, geom) {
+  const tensor = outputMap[yoloSession.outputNames[0]];
+  const data = await tensorValues(tensor);
+  const dims = tensor.dims || [];
+  if (!data || dims.length !== 3) return [];
+  const transposed = dims[1] < dims[2];
+  const numCls = (transposed ? dims[1] : dims[2]) - 4;
+  const numPred = transposed ? dims[2] : dims[1];
+  if (numCls < 1 || numPred < 1) return [];
+  const limit = Math.min(numCls, COCO_NAMES.length);
+  const at = (c, i) => data[transposed ? c * numPred + i : i * (numCls + 4) + c];
+  const boxes = [], scores = [], classes = [];
+  for (let i = 0; i < numPred; i += 1) {
+    let maxS = 0, maxC = 0;
+    for (let c = 0; c < limit; c += 1) {
+      const s = at(4 + c, i);
+      if (s > maxS) { maxS = s; maxC = c; }
+    }
+    if (maxS < 0.25) continue;
+    let cx = at(0, i), cy = at(1, i), bw = at(2, i), bh = at(3, i);
+    if (bw <= 2 && bh <= 2 && cx <= 2 && cy <= 2) {
+      cx *= YOLO_SIZE; cy *= YOLO_SIZE; bw *= YOLO_SIZE; bh *= YOLO_SIZE;
+    }
+    const x1 = (cx - bw / 2 - geom.dx) / geom.scale;
+    const y1 = (cy - bh / 2 - geom.dy) / geom.scale;
+    const w = bw / geom.scale, h = bh / geom.scale;
+    if (w < 2 || h < 2) continue;
+    boxes.push([x1, y1, x1 + w, y1 + h]);
+    scores.push(maxS);
+    classes.push(maxC);
+  }
+  return nms(boxes, scores, classes, 0.45).map((index) => ({
+    class: COCO_NAMES[classes[index]] || 'object',
+    score: scores[index],
+    bbox: [boxes[index][0], boxes[index][1], boxes[index][2] - boxes[index][0], boxes[index][3] - boxes[index][1]]
+  }));
+}
+async function detectYolo(source) {
+  const geom = letterbox(source, YOLO_SIZE);
+  if (!geom) return [];
+  const inputName = yoloSession.inputNames[0];
+  const layouts = yoloLayout ? [yoloLayout] : ['nchw', 'nhwc'];
+  let lastErr = null;
+  for (let i = 0; i < layouts.length; i += 1) {
+    const layout = layouts[i];
+    try {
+      const shape = layout === 'nchw' ? [1, 3, YOLO_SIZE, YOLO_SIZE] : [1, YOLO_SIZE, YOLO_SIZE, 3];
+      const feeds = {};
+      feeds[inputName] = new ort.Tensor('float32', canvasToTensor(layout, YOLO_SIZE), shape);
+      const out = await yoloSession.run(feeds);
+      const parsed = await parseYolo(out, geom);
+      yoloLayout = layout;
+      diag.layout = layout.toUpperCase();
+      renderDiag();
+      return parsed;
+    } catch (err) { lastErr = err; }
+  }
+  throw lastErr || new Error('yolo');
+}
+
+function configureOrt() {
+  if (!window.ort) return false;
+  ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/';
+  ort.env.wasm.numThreads = 1;
+  return true;
+}
+function setEngine(state, text) {
+  const node = $('engineStatus');
+  node.className = 'engine ' + state;
+  node.textContent = faDigits(text).replace(/YOLOv۸/g, 'YOLOv8');
+  node.title = diag.error || '';
+}
+function engineText() {
+  if (cfg.modelMode === 'yolo') return yoloSession ? 'YOLOv8 آماده' : 'YOLOv8 در دسترس نیست';
+  if (cfg.modelMode === 'coco') return cocoLite ? 'COCO آماده' : 'COCO در دسترس نیست';
+  if (cfg.modelMode === 'coco_acc') return cocoAcc ? 'COCO دقیق آماده' : (cocoLite ? 'COCO سریع آماده' : 'COCO در دسترس نیست');
+  const bits = [];
+  if (cocoLite) bits.push('COCO');
+  if (yoloSession) bits.push('YOLOv8');
+  return bits.length ? bits.join(' + ') + ' آماده' : 'مدلی بارگذاری نشد';
+}
+function renderDiag() {
+  $('diagCoco').textContent = diag.coco;
+  $('diagYolo').textContent = diag.yolo;
+  $('diagLayout').textContent = diag.layout;
+  $('diagErr').textContent = diag.error || '—';
+}
+function loadCocoLite() {
+  if (cocoLite) return Promise.resolve(cocoLite);
+  if (!window.cocoSsd) return Promise.reject(new Error('coco-ssd'));
+  if (!cocoLitePromise) {
+    setEngine('loading', 'بارگذاری COCO');
+    cocoLitePromise = cocoSsd.load({base:'lite_mobilenet_v2'}).then((model) => {
+      cocoLite = model; diag.coco = 'lite'; return model;
+    }).catch((err) => { cocoLitePromise = null; throw err; });
+  }
+  return cocoLitePromise;
+}
+async function loadCocoAcc() {
+  if (cocoAcc || !window.cocoSsd) return cocoAcc;
+  cocoAcc = await cocoSsd.load({base:'mobilenet_v2'});
+  diag.coco = 'accurate';
+  return cocoAcc;
+}
+async function fetchBuf(url, label) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  const len = Number(res.headers.get('content-length')) || 0;
+  if (!res.body || !len) return res.arrayBuffer();
+  const reader = res.body.getReader();
+  const chunks = [];
+  let got = 0;
+  while (true) {
+    const step = await reader.read();
+    if (step.done) break;
+    chunks.push(step.value);
+    got += step.value.length;
+    setEngine('loading', label + ' ' + Math.round(got / len * 100) + '%');
+  }
+  const all = new Uint8Array(got);
+  let offset = 0;
+  chunks.forEach((chunk) => { all.set(chunk, offset); offset += chunk.length; });
+  return all.buffer;
+}
+async function loadYolo() {
+  if (!configureOrt()) throw new Error('ort');
+  const paths = ['./yolov8-model/yolov8n.onnx', './yolov8-onnx/public/model/yolov8n.onnx', './yolov8-browser/model/yolov8n.onnx'];
+  let last = null;
+  for (let i = 0; i < paths.length; i += 1) {
+    try {
+      const buf = await fetchBuf(paths[i], 'YOLOv8');
+      yoloSession = await ort.InferenceSession.create(buf, {executionProviders:['wasm']});
+      diag.yolo = paths[i];
+      return;
+    } catch (err) { last = err; }
+  }
+  diag.yolo = 'یافت نشد';
+  diag.error = last ? String(last.message || last) : '';
+  throw last || new Error('yolo');
+}
+async function loadAllModels() {
+  setEngine('loading', 'بارگذاری مدل');
+  try { await loadCocoLite(); } catch (err) { diag.error = 'COCO بارگذاری نشد'; }
+  try { await loadYolo(); } catch (err) {}
+  setEngine((cocoLite || cocoAcc || yoloSession) ? 'ready' : 'error', engineText());
+  renderDiag();
+}
+
+function paintInspectBase() {
+  if (!inspectImg) return;
+  const scale = Math.min(1, 1280 / inspectImg.naturalWidth);
+  inspectCanvas.width = Math.max(1, Math.round(inspectImg.naturalWidth * scale));
+  inspectCanvas.height = Math.max(1, Math.round(inspectImg.naturalHeight * scale));
+  inspectCanvas.getContext('2d').drawImage(inspectImg, 0, 0, inspectCanvas.width, inspectCanvas.height);
+}
+async function runInspection(src) {
+  try {
+    lastInspectSrc = src;
+    setText('inspectStatus', 'در حال خواندن تصویر...');
+    const img = new Image();
+    img.src = src;
+    await img.decode();
+    inspectImg = img;
+    paintInspectBase();
+    await runInspectDetect();
+  } catch (err) { setText('inspectStatus', 'تصویر خوانده نشد'); }
+}
+async function runInspectDetect() {
+  if (!inspectImg) return;
+  paintInspectBase();
+  setText('inspectStatus', 'در حال تشخیص...');
+  try {
+    if (cfg.modelMode === 'coco_acc' && !cocoAcc) await loadCocoAcc();
+    else if (!cocoLite && cfg.modelMode !== 'yolo') await loadCocoLite().catch(() => null);
+    if (!cocoLite && !cocoAcc && !yoloSession) {
+      setText('inspectStatus', 'مدل هنوز آماده نیست. چند لحظه بعد دوباره اجرا کنید.');
+      renderFindings([]);
+      return;
+    }
+    const found = await detectOnSource(inspectCanvas);
+    const g = inspectCanvas.getContext('2d');
+    found.forEach((item) => drawOneBox(g, {class:item.class, score:item.score, bx:item.bbox[0], by:item.bbox[1], bw:item.bbox[2], bh:item.bbox[3], trackId:0}, true));
+    renderFindings(found);
+    setText('inspectStatus', found.length ? faNum(found.length) + ' مورد دیده شد' : 'موردی با فیلتر فعلی دیده نشد. اجسام ریز تخصصی در این موتور پوشش داده نمی‌شوند.');
+  } catch (err) {
+    console.warn(err);
+    setText('inspectStatus', 'تشخیص این تصویر انجام نشد');
+  }
+}
+function renderFindings(list) {
+  lastFindings = list;
+  const box = $('inspectList');
+  box.replaceChildren();
+  if (!list.length) {
+    box.append(el('p', {class:'muted'}, ['موردی برای نمایش نیست.']));
+    return;
+  }
+  list.forEach((item, index) => {
+    box.append(el('div', {class:'finding'}, [
+      el('div', null, [
+        el('strong', null, [labelOf(item.class) + ' · ' + faNum(item.score * 100) + '٪']),
+        el('div', {class:'muted'}, [{person:'انسان', air:'هواپیما', vehicle:'وسیله', wildlife:'حیات‌وحش', fod:'FOD'}[family(item.class)] || 'شیء'])
+      ]),
+      el('button', {type:'button', class:'btn tiny', 'data-act':'promote', 'data-idx':index}, ['ثبت رخداد'])
+    ]));
+  });
+}
+function promote(index) {
+  const item = lastFindings[index];
+  if (!item) return;
+  const kind = family(item.class);
+  const severity = kind === 'person' ? 'high' : 'medium';
+  let thumb = '';
+  try { thumb = inspectCanvas.toDataURL('image/jpeg', 0.7); } catch (err) { thumb = ''; }
+  createIncident({
+    severity, kind: kind === 'wildlife' ? 'wildlife' : kind === 'fod' ? 'fod' : 'inspect',
+    title: 'بازرسی تصویر: ' + labelOf(item.class),
+    detail: 'اطمینان ' + faNum(item.score * 100) + '٪',
+    className: item.class, score: item.score, trackId: '', camera: 'IMG', zone: '', cx: 0, cy: 0, thumb
+  });
+  toast('در رخدادها ثبت شد');
+  goto('incidents');
+}
+
+function getCanvasPos(event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (event.clientX - rect.left) * (canvas.width / rect.width),
+    y: (event.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+function onPointerDown(event) {
+  if (!drawing) return;
+  event.preventDefault();
+  if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
+  anchor = getCanvasPos(event);
+  draft = {x:anchor.x, y:anchor.y, w:0, h:0};
+}
+function onPointerMove(event) {
+  if (!drawing || !anchor) return;
+  const pos = getCanvasPos(event);
+  draft = {x:Math.min(anchor.x, pos.x), y:Math.min(anchor.y, pos.y), w:Math.abs(pos.x - anchor.x), h:Math.abs(pos.y - anchor.y)};
+}
+function onPointerUp() {
+  if (!drawing || !draft) return;
+  if (draft.w > 12 && draft.h > 12 && canvas.width && canvas.height) {
+    const id = zones.reduce((max, zone) => Math.max(max, zone.id), 0) + 1;
+    const type = $('zoneType').value;
+    const typeName = {restricted:'ممنوعه', caution:'احتیاط', watch:'پایش'}[type] || 'منطقه';
+    zones.push({
+      id, type, name: typeName + ' ' + id,
+      x: draft.x / canvas.width, y: draft.y / canvas.height,
+      w: draft.w / canvas.width, h: draft.h / canvas.height
+    });
+    dirty();
+    renderZones();
+    pushLog({type:'system', text:'منطقه «' + zones[zones.length - 1].name + '» اضافه شد'});
+  }
+  draft = null; anchor = null; drawing = false; suppressClick = true;
+  syncChrome();
+}
+function toggleZone(force) {
+  drawing = typeof force === 'boolean' ? force : !drawing;
+  if (!drawing) { draft = null; anchor = null; }
+  syncChrome();
+}
+function addSampleZone() {
+  if (zones.some((zone) => zone.name === 'نمونه میانه')) { toast('منطقه نمونه وجود دارد'); return; }
+  const id = zones.reduce((max, zone) => Math.max(max, zone.id), 0) + 1;
+  zones.push({id, x:0.42, y:0.36, w:0.16, h:0.30, type:'restricted', name:'نمونه میانه'});
+  dirty(); renderZones();
+  toast('منطقه نمونه روی میانه نما قرار گرفت');
+}
+function startDetect() {
+  detectOn = true;
+  if (!demo.on && !hasSignal()) toast('تشخیص فعال شد و با رسیدن تصویر کار می‌کند');
+  else toast(demo.on ? 'پایش ویدیوهای دمو فعال شد' : 'تشخیص فعال شد');
+  pushLog({type:'system', text:'تشخیص فعال شد'});
+  syncChrome();
+}
+function stopDetect() {
+  detectOn = false;
+  latest = [];
+  tracks.length = 0;
+  SLOTS.forEach((key) => { camCache[key] = {t:0, items:[]}; });
+  updateStats([]);
+  pushLog({type:'system', text:'تشخیص متوقف شد'});
+  syncChrome();
+}
+function clipLabel(path) {
+  const base = decodeURIComponent(path.split('/').pop() || '');
+  const hit = base.match(/(\d{2})(\d{2})\d{2}(?=\.mp4$)/i);
+  return hit ? faDigits(hit[1] + ':' + hit[2]) : base.replace(/\.mp4$/i, '').slice(0, 18);
+}
+async function listDemoVideos() {
+  const fallback = [
+    'videos/Recording 2026-11-09 112008.mp4',
+    'videos/Recording 2026-11-09 112835.mp4',
+    'videos/Recording 2026-11-09 114012.mp4',
+    'videos/Recording 2026-11-09 114536.mp4'
+  ];
+  try {
+    const res = await fetch('videos/');
+    if (!res.ok) return fallback;
+    const html = await res.text();
+    const found = [];
+    const re = /href="([^"]+\.mp4)"/gi;
+    let match;
+    while ((match = re.exec(html))) {
+      let name = match[1];
+      try { name = decodeURIComponent(name); } catch (err) {}
+      name = name.split('/').pop();
+      if (!name || name.includes('..')) continue;
+      found.push('videos/' + name);
+    }
+    const unique = [...new Set(found)].sort();
+    return unique.length ? unique.slice(0, SLOTS.length) : fallback;
+  } catch (err) { return fallback; }
+}
+function layoutDemoSlots() {
+  const box = $('sources');
+  if (box) box.classList.toggle('quad', demo.on && demo.keys.length > 3);
+  SLOTS.forEach((key) => {
+    const card = $('source' + key);
+    if (!card) return;
+    card.hidden = key === 'E' && !(demo.on && demo.keys.includes('E'));
+  });
+}
+function stopVideoDemo() {
+  demo.keys.forEach((key) => stopCam(key));
+  if (demo.names) cfg.camNames = demo.names;
+  demo.names = null;
+  demo.labels = null;
+  demo.keys = [];
+  SLOTS.forEach((key) => {
+    const input = $('camName' + key);
+    if (input) input.value = cfg.camNames[key] || '';
+  });
+  layoutDemoSlots();
+  dirty();
+}
+async function toggleDemo() {
+  if (demo.on) {
+    demo.on = false;
+    stopVideoDemo();
+    tracks.length = 0;
+    latest = [];
+    updateStats([]);
+    syncChrome();
+    toast('دمو ویدیو خاموش شد');
+    return;
+  }
+  const files = await listDemoVideos();
+  if (!files.length) { toast('در پوشه videos ویدیویی پیدا نشد'); return; }
+  demo.names = Object.assign({}, cfg.camNames);
+  demo.keys = SLOTS.slice(0, files.length);
+  demo.labels = {};
+  demo.keys.forEach((key, index) => { demo.labels[key] = clipLabel(files[index]); });
+  demo.on = true;
+  layoutDemoSlots();
+  await Promise.all(demo.keys.map((key, index) => loadUrl(key, files[index], demo.labels[key])));
+  tracks.length = 0;
+  latest = [];
+  detectOn = true;
+  syncChrome();
+  pushLog({type:'system', text:'دمو با ' + faNum(files.length) + ' ویدیو از پوشه videos'});
+  toast(faNum(files.length) + ' ویدیو از پوشه videos پخش شد');
+}
+function primeAudio() {
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  if (!AudioCtx) return;
+  if (!beep.ctx) beep.ctx = new AudioCtx();
+  if (beep.ctx.state === 'suspended') beep.ctx.resume();
+}
+function snapshotDownload() {
+  try {
+    const link = document.createElement('a');
+    link.href = canvas.toDataURL('image/png');
+    link.download = 'ika-runway-' + Date.now() + '.png';
+    link.click();
+    pushLog({type:'snap', text:'تصویر نما ذخیره شد', thumb:safeThumb()});
+    toast('تصویر ذخیره شد');
+  } catch (err) { toast('ذخیره تصویر ممکن نشد'); }
+}
+function fullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (stage.requestFullscreen) stage.requestFullscreen();
+}
+function csvCell(value) { return '"' + String(value ?? '').replace(/"/g, '""') + '"'; }
+function downloadBlob(filename, text, type) {
+  const blob = new Blob([text], {type});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(link.href), 1200);
+}
+function exportJson() {
+  downloadBlob('ika-shift.json', JSON.stringify({exported:new Date().toISOString(), cfg, zones, incidents, log, checklist, notes, shiftStart}, null, 2), 'application/json');
+  toast('خروجی JSON ذخیره شد');
+}
+function exportCsv() {
+  const header = ['id','date','time','severity','status','kind','title','detail','class','score','camera','track'];
+  const lines = [header.join(',')];
+  incidents.forEach((item) => {
+    lines.push([item.id, fmtDate(item.ts), fmtTime(item.ts), item.severity, item.status, item.kind, item.title, item.detail || '', item.className || '', item.score || '', item.camera || '', item.trackId || ''].map(csvCell).join(','));
+  });
+  downloadBlob('ika-incidents.csv', '\uFEFF' + lines.join('\n'), 'text/csv;charset=utf-8');
+  toast('خروجی CSV ذخیره شد');
+}
+function clearIncidents() {
+  if (!incidents.length && !log.length) return;
+  if (!confirm('رخدادها و رویدادهای ثبت‌شده پاک شوند؟')) return;
+  incidents = []; log = []; raised.clear(); activeIncId = null;
+  renderIncidents(); renderIncDetail(); renderLogFull(); syncChrome(); dirty();
+}
+function clearStorage() {
+  if (!confirm('همه داده‌های محلی این سامانه پاک شود؟')) return;
+  localStorage.removeItem(KEY);
+  location.reload();
+}
+function newShift() {
+  if (!confirm('شیفت جدید شروع شود؟ چک‌لیست و یادداشت پاک می‌شود.')) return;
+  checklist = {}; notes = ''; shiftStart = Date.now();
+  $('notes').value = '';
+  renderChecklist(); syncChrome(); dirty();
+  pushLog({type:'system', text:'شیفت جدید شروع شد'});
+}
+function printShift() {
+  const root = $('printArea');
+  root.replaceChildren(
+    el('h1', null, ['گزارش شیفت — پایش باند IKA']),
+    el('p', null, ['اپراتور: ' + (cfg.operator || '—')]),
+    el('p', null, ['شروع: ' + fmtDate(shiftStart) + ' ' + fmtTime(shiftStart)]),
+    el('p', null, ['باند ' + cfg.runway + ' · ' + runwayStateLabel() + ' · سطح ' + surfaceLabel()])
+  );
+  root.append(el('h2', null, ['چک‌لیست']));
+  const list = el('ul');
+  CHECKS.forEach(([id, label]) => list.append(el('li', null, [(checklist[id] ? '✓ ' : '○ ') + label])));
+  root.append(list, el('h2', null, ['رخدادهای باز']));
+  const openList = el('ul');
+  const openItems = incidents.filter((item) => item.status !== 'closed');
+  if (!openItems.length) openList.append(el('li', null, ['مورد بازی نیست.']));
+  openItems.forEach((item) => openList.append(el('li', null, [fmtTime(item.ts) + ' · ' + (SEV_FA[item.severity] || item.severity) + ' · ' + item.title])));
+  root.append(openList, el('h2', null, ['یادداشت']), el('p', null, [notes || '—']));
+  window.print();
+}
+function ackAll() {
+  let count = 0;
+  incidents.forEach((item) => { if (item.status === 'open') { item.status = 'ack'; count += 1; } });
+  if (!count) return;
+  if (!$('modal').hidden) dismissModal();
+  pushLog({type:'system', text:'تأیید گروهی ' + faNum(count) + ' رخداد'});
+  renderIncidents(); renderIncDetail(); syncChrome();
+}
+
+const actions = {
+  goto: (b) => goto(b.dataset.view),
+  start: startDetect,
+  stop: stopDetect,
+  pick: (b) => $('file' + b.dataset.cam).click(),
+  webcam: (b) => loadWebcam(b.dataset.cam),
+  screen: (b) => loadScreen(b.dataset.cam),
+  'clear-cam': (b) => { stopCam(b.dataset.cam); refreshSources(); },
+  zone: () => toggleZone(),
+  'sample-zone': addSampleZone,
+  'clear-zones': () => {
+    if (!zones.length || !confirm('همه مناطق پاک شوند؟')) return;
+    zones = []; dirty(); renderZones(); pushLog({type:'system', text:'مناطق پاک شدند'});
+  },
+  snap: snapshotDownload,
+  night: () => { cfg.night = !cfg.night; dirty(); syncChrome(); },
+  fullscreen,
+  demo: toggleDemo,
+  ifilter: (b) => { incFilter = b.dataset.filter; renderIncidents(); },
+  ack: (b) => setStatus(b.dataset.id, 'ack'),
+  'close-inc': (b) => setStatus(b.dataset.id, 'closed'),
+  reopen: (b) => setStatus(b.dataset.id, 'open'),
+  'pick-inc': (b) => { activeIncId = b.dataset.id; renderIncidents(); renderIncDetail(); },
+  'del-zone': (b) => { zones = zones.filter((zone) => String(zone.id) !== b.dataset.id); dirty(); renderZones(); },
+  'modal-ack': () => { if (modalIncId) setStatus(modalIncId, 'ack'); },
+  'modal-later': dismissModal,
+  'export-json': exportJson,
+  'export-csv': exportCsv,
+  'clear-incidents': clearIncidents,
+  'clear-storage': clearStorage,
+  'print-shift': printShift,
+  'new-shift': newShift,
+  'test-audio': () => beep('critical'),
+  sample: (b) => runInspection(b.dataset.src),
+  promote: (b) => promote(Number(b.dataset.idx)),
+  redetect: () => { if (lastInspectSrc) runInspection(lastInspectSrc); else toast('ابتدا یک تصویر انتخاب کنید'); },
+  'pick-image': () => $('inspectFile').click(),
+  'ack-all': ackAll,
+  'runway-state': (b) => { cfg.runwayState = b.dataset.state; dirty(); syncChrome(); }
+};
+
+function bind() {
+  document.body.addEventListener('click', (event) => {
+    primeAudio();
+    const button = event.target.closest('[data-act]');
+    if (!button || !actions[button.dataset.act]) return;
+    actions[button.dataset.act](button);
+  });
+  document.body.addEventListener('input', (event) => {
+    const target = event.target;
+    if (target.dataset.operator !== undefined) {
+      cfg.operator = target.value.slice(0, 48);
+      document.querySelectorAll('[data-operator]').forEach((node) => { if (node !== target) node.value = cfg.operator; });
+      dirty(); syncChrome();
+    }
+    if (target.id === 'notes') { notes = target.value.slice(0, 4000); dirty(); }
+    if (target.dataset.camName) { cfg.camNames[target.dataset.camName] = target.value.slice(0, 32); dirty(); }
+    if (target.dataset.zoneName) {
+      const zone = zones.find((item) => String(item.id) === target.dataset.zoneName);
+      if (zone) { zone.name = target.value.slice(0, 40); dirty(); }
+    }
+    if (target.id === 'taxSearch') renderTax(target.value);
+    if (target.id === 'confSlider') { cfg.conf = Number(target.value) / 100; $('confVal').textContent = faNum(target.value) + '٪'; dirty(); }
+    if (target.id === 'lookSlider') { cfg.lookDeg = Number(target.value); $('lookVal').textContent = faNum(target.value) + '°'; dirty(); syncChrome(); }
+    if (target.id === 'intervalSlider') { cfg.interval = Number(target.value); $('intervalVal').textContent = faNum(target.value) + 'ms'; dirty(); }
+  });
+  document.body.addEventListener('change', async (event) => {
+    const target = event.target;
+    if (target.dataset.flag) { cfg[target.dataset.flag] = target.checked; dirty(); syncChrome(); }
+    if (target.dataset.zoneType) {
+      const zone = zones.find((item) => String(item.id) === target.dataset.zoneType);
+      if (zone) { zone.type = target.value; dirty(); renderZones(); }
+    }
+    if (target.dataset.check) { checklist[target.dataset.check] = target.checked; dirty(); renderShiftProgress(); }
+    if (target.id === 'modelMode') {
+      cfg.modelMode = target.value; dirty();
+      if (target.value === 'coco_acc') {
+        setEngine('loading', 'بارگذاری COCO دقیق');
+        try { await loadCocoAcc(); } catch (err) { diag.error = 'COCO دقیق بارگذاری نشد'; }
+      }
+      setEngine((cocoLite || cocoAcc || yoloSession) ? 'ready' : 'error', engineText());
+      renderDiag();
+    }
+    if (target.id === 'runwaySel') { cfg.runway = target.value; dirty(); syncChrome(); }
+    if (target.id === 'surfaceSel') { cfg.surface = target.value; dirty(); syncChrome(); }
+    if (target.id === 'zoneType') { cfg.zoneType = target.value; dirty(); }
+  });
+  SLOTS.forEach((key) => {
+    $('file' + key).addEventListener('change', (event) => {
+      if (event.target.files && event.target.files[0]) loadFile(key, event.target.files[0]);
+    });
+    vids[key].addEventListener('loadedmetadata', () => {
+      setText('res' + key, vids[key].videoWidth + '×' + vids[key].videoHeight);
+      refreshSources();
+    });
+  });
+  $('inspectFile').addEventListener('change', (event) => {
+    if (event.target.files && event.target.files[0]) runInspection(URL.createObjectURL(event.target.files[0]));
+  });
+  const drop = $('dropZone');
+  drop.addEventListener('dragover', (event) => { event.preventDefault(); drop.classList.add('hot'); });
+  drop.addEventListener('dragleave', () => drop.classList.remove('hot'));
+  drop.addEventListener('drop', (event) => {
+    event.preventDefault();
+    drop.classList.remove('hot');
+    const file = event.dataTransfer.files && event.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) runInspection(URL.createObjectURL(file));
+  });
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  canvas.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('pointercancel', onPointerUp);
+  canvas.addEventListener('click', (event) => {
+    if (suppressClick) { suppressClick = false; return; }
+    if (drawing) return;
+    const pos = getCanvasPos(event);
+    const hit = latest.slice().reverse().find((item) => pos.x >= item.bx && pos.x <= item.bx + item.bw && pos.y >= item.by && pos.y <= item.by + item.bh);
+    selectedId = hit ? hit.trackId : null;
+    refreshSelection.sig = '';
+    refreshSelection();
+  });
+  document.addEventListener('paste', (event) => {
+    if (currentView !== 'inspect' || !event.clipboardData) return;
+    const file = Array.from(event.clipboardData.files || []).find((item) => item.type.startsWith('image/'));
+    if (file) runInspection(URL.createObjectURL(file));
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.repeat) return;
+    const tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    if (event.code === 'Escape') {
+      if (!$('modal').hidden) dismissModal();
+      else if (drawing) toggleZone(false);
+      return;
+    }
+    if (event.code === 'Space') {
+      if (tag === 'BUTTON' || tag === 'SUMMARY' || tag === 'A') return;
+      event.preventDefault();
+      detectOn ? stopDetect() : startDetect();
+    } else if (event.code === 'KeyZ') toggleZone();
+    else if (event.code === 'KeyS') snapshotDownload();
+    else if (event.code === 'KeyN') { cfg.night = !cfg.night; dirty(); syncChrome(); }
+    else if (event.code === 'KeyD') toggleDemo();
+    else if (event.code === 'KeyF') fullscreen();
+    else if (/^Digit[1-5]$/.test(event.code)) goto(['monitor','incidents','inspect','shift','settings'][Number(event.code.slice(5)) - 1]);
+  });
+}
+
+function selfTest() {
+  const overlap = rectsOverlap({x:0,y:0,w:10,h:10}, {x:9,y:9,w:4,h:4});
+  const apart = rectsOverlap({x:0,y:0,w:10,h:10}, {x:20,y:20,w:2,h:2});
+  if (!overlap || apart) console.warn('zone overlap self-test failed');
+}
+function boot() {
+  loadState();
+  hydrate();
+  bind();
+  renderZones();
+  renderIncidents();
+  renderIncDetail();
+  renderLogFull();
+  renderChecklist();
+  renderSamples();
+  renderTax('');
+  syncChrome();
+  tickClock();
+  if (!log.length) pushLog({type:'system', text:'سامانه آماده است'});
+  if (location.protocol === 'file:') $('fileNote').hidden = false;
+  requestAnimationFrame(frame);
+  loadAllModels();
+  setInterval(tickClock, 1000);
+  setInterval(() => {
+    if (!cfg.audio || document.hidden) return;
+    if (incidents.some((item) => item.status === 'open' && item.severity === 'critical')) beep('critical');
+  }, 5000);
+  selfTest();
+}
+boot();
+</script>
+</body>
+</html>

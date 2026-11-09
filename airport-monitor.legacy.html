@@ -1,0 +1,1338 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>سامانه هوشمند پایش و ایمنی تصویری باند فرودگاه امام خمینی (ره)</title>
+<style>
+:root{--bg:#020b17;--panel:#06182a;--line:#0879b7;--cyan:#00c8ff;--text:#e7f6ff;--muted:#8db4cc;--green:#20e58a;--yellow:#ffbf35;--red:#ff4c55}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% 0,#0b2942 0,#020b17 55%);color:var(--text);font-family:Tahoma,Arial,sans-serif}
+header{height:72px;display:flex;align-items:center;justify-content:space-between;padding:8px 18px;border-bottom:1px solid #0879b7;background:#041426;box-shadow:0 0 24px #008bd533}
+.brand{font-size:13px;line-height:1.7}.brand b{font-size:16px;color:#fff}.brand small{display:block;color:#9fc5dc;direction:ltr}
+.headtitle{text-align:center}.headtitle h1{font-size:clamp(14px,1.8vw,20px);margin:0;color:#eafaff;text-shadow:0 0 12px #00bfff}.headtitle p{margin:4px 0 0;color:#8fcbe9;font-size:11px}
+.status{text-align:left;font-size:12px;line-height:1.8;color:#b9d7e8}.dot{display:inline-block;width:8px;height:8px;background:var(--green);border-radius:50%;box-shadow:0 0 10px var(--green);margin-left:5px}
+main{padding:10px;max-width:1920px;margin:auto}
+
+/* Toolbar */
+.toolbar{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.btn,.filelabel{background:#08243a;color:#dff7ff;border:1px solid #0879b7;padding:8px 12px;border-radius:7px;cursor:pointer;font:inherit;font-size:12px;white-space:nowrap}
+.btn:hover,.filelabel:hover{background:#0b3857}.btn.primary{background:#006c9f;border-color:#00c8ff}.btn.danger{border-color:#a93645;color:#ffb9bd}
+.btn.active{outline:2px solid var(--yellow);outline-offset:1px}
+input[type=file]{display:none}
+.sourceinfo{font-size:11px;color:#93b7cc;width:100%;margin-bottom:6px}
+.model-status{font-size:11px;padding:4px 10px;border-radius:4px;background:#0a2a3d;border:1px solid #0879b7;color:#8fcbe9}
+.model-status.loading{color:#ffbf35}.model-status.ready{color:#20e58a}.model-status.error{color:#ff4c55}
+
+/* Triple camera upload row */
+.cam-uploads{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.cam-slot{background:#06182a;border:1px solid #0879b7;border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:5px}
+.cam-slot .cam-title{font-size:12px;color:#aeeaff;font-weight:bold;display:flex;justify-content:space-between;align-items:center}
+.cam-slot .cam-title span.status-cam{font-weight:normal;font-size:11px}
+.cam-slot .cam-title span.status-cam.on{color:var(--green)}.cam-slot .cam-title span.status-cam.off{color:var(--red)}
+.cam-slot .filelabel{text-align:center;padding:7px;font-size:11px}
+.cam-slot .cam-btns{display:flex;gap:5px}
+.cam-slot .cam-btns .btn{flex:1;padding:6px 4px;font-size:11px;margin:0}
+
+/* Wide panorama - FULL WIDTH, no sidebar */
+.panorama{position:relative;width:100%;background:#020914;border:1px solid #0879b7;border-radius:9px;overflow:hidden;box-shadow:inset 0 0 18px #008bd511,0 0 12px #001b2d}
+.panorama .bar{height:34px;padding:8px 13px;border-bottom:1px solid #09618f;color:#bcecff;font-size:12px;display:flex;justify-content:space-between;align-items:center;background:#041426}
+.stage{position:relative;width:100%;aspect-ratio:48/9;max-height:52vh;background:#06101c;overflow:hidden}
+#wideCanvas{width:100%;height:100%;display:block}
+.overlay{position:absolute;inset:0;pointer-events:none}
+.arc{position:absolute;top:6px;left:20%;right:20%;height:36px;border-top:2px solid #00d9ff;border-radius:50%;filter:drop-shadow(0 0 5px #00d9ff);text-align:center;color:#00e5ff;font-weight:bold;font-size:20px}
+.arc:before,.arc:after{content:"";position:absolute;top:-6px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent}
+.arc:before{left:-2px;border-right:11px solid #00d9ff}.arc:after{right:-2px;border-left:11px solid #00d9ff}
+.scan{position:absolute;inset:0;background:linear-gradient(transparent 49.7%,#00c8ff18 50%,transparent 50.3%),linear-gradient(90deg,transparent 33.2%,#00c8ff22 33.3%,transparent 33.4%),linear-gradient(90deg,transparent 66.5%,#00c8ff22 66.6%,transparent 66.7%);mix-blend-mode:screen;pointer-events:none}
+.cam-label{position:absolute;top:8px;padding:3px 8px;background:#03101dcc;border:1px solid #0879b7;border-radius:4px;font-size:11px;color:#aeeaff;pointer-events:none;z-index:5}
+.cam-label.left{left:8px}.cam-label.center{left:50%;transform:translateX(-50%)}.cam-label.right{right:8px}
+.alarm-banner{position:absolute;top:12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff3b5c,#e91e63);color:#fff;padding:8px 20px;border-radius:8px;font-weight:700;font-size:14px;z-index:40;display:none;box-shadow:0 0 28px rgba(255,59,92,.65);animation:alarmPulse .45s ease-in-out infinite;white-space:nowrap;pointer-events:none}
+.alarm-banner.show{display:block}
+@keyframes alarmPulse{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(1.04)}}
+/* Modal هشدار هواپیما */
+.modal-overlay{position:fixed;inset:0;background:rgba(2,11,23,.82);backdrop-filter:blur(6px);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.modal-overlay.show{display:flex}
+.modal-box{background:linear-gradient(160deg,#0c1e32,#061018);border:2px solid #ff4c55;border-radius:14px;max-width:440px;width:100%;box-shadow:0 0 40px rgba(255,76,85,.35),0 12px 40px rgba(0,0,0,.5);overflow:hidden;animation:modalIn .25s ease-out}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.modal-header{background:linear-gradient(135deg,#ff3b5c,#c62828);padding:14px 18px;display:flex;align-items:center;gap:10px}
+.modal-header .icon{font-size:28px;line-height:1}
+.modal-header h2{margin:0;font-size:16px;color:#fff;font-weight:700}
+.modal-body{padding:18px 20px;font-size:13px;line-height:1.8;color:#d0e8f5}
+.modal-body .detail{background:#0a1a2a;border:1px solid #1a3a55;border-radius:8px;padding:10px 12px;margin:10px 0;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.modal-body .detail span{color:#8db4cc;font-size:11px}
+.modal-body .detail b{color:#00d4ff;font-size:13px;display:block}
+.modal-footer{padding:12px 18px 16px;display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap}
+.modal-footer .btn{min-width:100px}
+
+/* Bottom controls - everything under the wide view */
+.bottomgrid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:8px}
+.panel{background:linear-gradient(145deg,#071c30,#041222);border:1px solid #0879b7;border-radius:9px;box-shadow:inset 0 0 18px #008bd511;overflow:hidden}
+.sectiontitle{padding:9px 12px;border-bottom:1px solid #075b88;color:#aeeaff;font-size:12px;font-weight:bold}
+.metrics{padding:8px;display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.metric{background:#06182a;border:1px solid #104b70;border-radius:6px;padding:8px;text-align:center}.metric b{display:block;font-size:20px;color:#00d4ff}.metric small{color:#91b9d0;font-size:10px}
+.events{padding:4px 10px;max-height:140px;overflow-y:auto}.event{padding:7px 2px;border-bottom:1px solid #12364c;font-size:11px;display:flex;justify-content:space-between;gap:6px}.event:last-child{border:0}.warn{color:var(--yellow)}.bad{color:var(--red)}.good{color:var(--green)}
+.statusrow{display:flex;justify-content:space-between;align-items:center;padding:7px 12px;font-size:11px;border-bottom:1px solid #0b2a40}
+.statusrow label{display:flex;align-items:center;gap:5px;cursor:pointer}
+.statusrow input[type=checkbox]{accent-color:#00c8ff;width:14px;height:14px}
+.ok{color:var(--green)}.bad-txt{color:var(--red)}
+.zone-list{padding:5px 12px;max-height:90px;overflow-y:auto;font-size:11px}
+.zone-item{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #12364c}
+.zone-item button{background:#3a1520;color:#ffb9bd;border:1px solid #a93645;border-radius:4px;padding:2px 7px;cursor:pointer;font:inherit;font-size:10px}
+footer{text-align:center;color:#6f9db8;font-size:11px;padding:12px;border-top:1px solid #0a2f4a;margin-top:10px}
+
+/* Report section */
+.report-panel{margin-top:10px;border:1px solid #0879b7;border-radius:9px;background:linear-gradient(145deg,#071c30,#041222);overflow:hidden}
+.report-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #075b88;flex-wrap:wrap;gap:8px}
+.report-header h3{margin:0;font-size:13px;color:#aeeaff}
+.report-actions{display:flex;gap:6px;flex-wrap:wrap}
+.report-actions .btn{padding:6px 10px;font-size:11px;width:auto;margin:0}
+.report-filters{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px;border-bottom:1px solid #0b2a40;font-size:11px}
+.report-filters label{display:flex;align-items:center;gap:4px;cursor:pointer;color:#8eb8d0}
+.report-filters input{accent-color:#00c8ff}
+.report-body{max-height:320px;overflow-y:auto;padding:8px 12px}
+.report-empty{text-align:center;color:#6f9db8;padding:24px;font-size:12px}
+.report-item{display:grid;grid-template-columns:90px 1fr 100px;gap:10px;align-items:start;padding:10px 8px;border-bottom:1px solid #12364c;font-size:11px}
+.report-item:last-child{border-bottom:0}
+.report-item .r-time{color:#8db4cc;font-size:10px;line-height:1.5}
+.report-item .r-time b{display:block;color:#00d4ff;font-size:12px}
+.report-item .r-body{color:#d0e8f5;line-height:1.6}
+.report-item .r-body .tag{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:bold;margin-left:4px}
+.tag-plane{background:#003d55;color:#00d4ff;border:1px solid #00a0cc}
+.tag-person{background:#3d1530;color:#ff6b9d;border:1px solid #c2185b}
+.tag-vehicle{background:#3d3010;color:#ffbf35;border:1px solid #c49000}
+.tag-fod{background:#3d1518;color:#ff4c55;border:1px solid #c62828}
+.tag-alarm{background:#4a1020;color:#ff8a9a;border:1px solid #ff4c55}
+.tag-snap{background:#0d2a1a;color:#20e58a;border:1px solid #00a050}
+.tag-info{background:#0a2030;color:#8db4cc;border:1px solid #1a4a6a}
+.report-item .r-thumb{width:100px;height:56px;object-fit:cover;border-radius:5px;border:1px solid #0879b7;cursor:pointer;background:#020913}
+.report-item .r-thumb-placeholder{width:100px;height:56px;border-radius:5px;border:1px dashed #1a3a55;display:flex;align-items:center;justify-content:center;color:#3a5a70;font-size:10px}
+.report-stats{display:flex;gap:12px;padding:8px 14px;border-top:1px solid #0b2a40;font-size:11px;color:#8eb8d0;flex-wrap:wrap}
+.report-stats b{color:#00d4ff}
+@media(max-width:700px){
+  .report-item{grid-template-columns:1fr;gap:6px}
+  .report-item .r-thumb,.report-item .r-thumb-placeholder{width:100%;height:80px}
+}
+
+/* Collapsible camera panel */
+.cam-panel{border:1px solid #0879b7;border-radius:9px;margin-bottom:8px;background:#06182a;overflow:hidden;transition:none}
+.cam-panel-toggle{width:100%;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;background:#08243a;border:none;color:#bcecff;font:inherit;font-size:12px;font-weight:bold;cursor:pointer;gap:8px}
+.cam-panel-toggle:hover{background:#0b3857}
+.cam-panel-toggle .arrow{transition:transform .25s ease;font-size:14px;color:#00c8ff}
+.cam-panel.collapsed .cam-panel-toggle .arrow{transform:rotate(180deg)}
+.cam-panel-body{max-height:280px;overflow:hidden;transition:max-height .3s ease,opacity .25s ease,padding .25s ease;opacity:1}
+.cam-panel.collapsed .cam-panel-body{max-height:0;opacity:0;padding-top:0;padding-bottom:0}
+.cam-panel-body-inner{padding:8px}
+.cam-panel .cam-uploads{margin-bottom:0}
+/* When collapsed, give more height to video */
+.stage{transition:max-height .3s ease}
+body.cams-collapsed .stage{max-height:68vh;aspect-ratio:48/10}
+
+@media(max-width:1100px){
+  .bottomgrid{grid-template-columns:1fr 1fr}
+  .stage{aspect-ratio:32/9;max-height:40vh}
+  body.cams-collapsed .stage{max-height:55vh}
+}
+@media(max-width:700px){
+  header{height:auto;gap:8px;flex-wrap:wrap}.headtitle{order:3;width:100%}
+  .cam-uploads{grid-template-columns:1fr}
+  .bottomgrid{grid-template-columns:1fr}
+  .stage{aspect-ratio:16/9;max-height:35vh}
+  body.cams-collapsed .stage{max-height:48vh}
+}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <b>فرودگاه بین‌المللی امام خمینی (ره)</b>
+    <small>Imam Khomeini International Airport — IKA</small>
+  </div>
+  <div class="headtitle">
+    <h1>سامانه هوشمند پایش و ایمنی تصویری باند</h1>
+    <p>مرکز کنترل عملیات زمینی | نمای سه‌گانه یکپارچه + تشخیص زنده</p>
+  </div>
+  <div class="status">
+    <span id="clock">--:--:--</span><br>
+    <span class="dot"></span>سامانه فعال
+  </div>
+</header>
+
+<main>
+  <!-- Collapsible camera sources -->
+  <div class="cam-panel" id="camPanel">
+    <button type="button" class="cam-panel-toggle" id="camPanelToggle" title="باز / بسته کردن پنل دوربین‌ها">
+      <span>📷 منابع دوربین (چپ · وسط · راست)</span>
+      <span style="display:flex;align-items:center;gap:10px">
+        <span id="camPanelSummary" style="font-weight:normal;font-size:11px;color:#8db4cc"></span>
+        <span class="arrow">▲</span>
+      </span>
+    </button>
+    <div class="cam-panel-body">
+      <div class="cam-panel-body-inner">
+        <div class="cam-uploads">
+          <div class="cam-slot">
+            <div class="cam-title">📷 دوربین چپ (L) <span class="status-cam off" id="stL">بدون منبع</span></div>
+            <label class="filelabel">انتخاب ویدیو چپ<input type="file" id="fileL" accept="video/*"></label>
+            <div class="cam-btns">
+              <button class="btn" id="webcamL">وب‌کم</button>
+              <button class="btn" id="screenL">اشتراک صفحه</button>
+              <button class="btn danger" id="clearL">قطع</button>
+            </div>
+          </div>
+          <div class="cam-slot">
+            <div class="cam-title">📷 دوربین وسط (C) <span class="status-cam off" id="stC">بدون منبع</span></div>
+            <label class="filelabel">انتخاب ویدیو وسط<input type="file" id="fileC" accept="video/*"></label>
+            <div class="cam-btns">
+              <button class="btn" id="webcamC">وب‌کم</button>
+              <button class="btn" id="screenC">اشتراک صفحه</button>
+              <button class="btn danger" id="clearC">قطع</button>
+            </div>
+          </div>
+          <div class="cam-slot">
+            <div class="cam-title">📷 دوربین راست (R) <span class="status-cam off" id="stR">بدون منبع</span></div>
+            <label class="filelabel">انتخاب ویدیو راست<input type="file" id="fileR" accept="video/*"></label>
+            <div class="cam-btns">
+              <button class="btn" id="webcamR">وب‌کم</button>
+              <button class="btn" id="screenR">اشتراک صفحه</button>
+              <button class="btn danger" id="clearR">قطع</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="btn primary" id="startBtn">▶ شروع پایش</button>
+    <button class="btn" id="stopBtn">⏹ توقف</button>
+    <button class="btn" id="drawZoneBtn">رسم منطقه ممنوعه</button>
+    <button class="btn danger" id="clearZonesBtn">پاک‌کردن مناطق</button>
+    <button class="btn" id="snapBtn">ثبت تصویر</button>
+    <button class="btn" id="dayNightBtn">حالت شب</button>
+    <button class="btn" id="fullscreenBtn">تمام‌صفحه</button>
+    <select id="modelMode" class="btn" style="appearance:auto;padding:7px 8px" title="موتور تشخیص">
+      <option value="single">COCO سریع</option>
+      <option value="dual">COCO چندموتوره</option>
+      <option value="yolo">فقط YOLOv8</option>
+      <option value="yolo_coco" selected>YOLOv8 + COCO</option>
+    </select>
+    <span class="model-status loading" id="modelStatus">بارگذاری مدل...</span>
+  </div>
+  <div class="sourceinfo" id="sourceInfo">سه ویدیو را بارگذاری کنید تا به‌صورت یکپارچه و بدون فاصله کنار هم نمایش داده شوند</div>
+
+  <!-- FULL WIDTH seamless triple view -->
+  <section class="panorama">
+    <div class="bar">
+      <span>نمای یکپارچه سه‌گانه باند | چپ + وسط + راست — بدون فاصله</span>
+      <span class="good" id="liveLabel">● آماده</span>
+    </div>
+    <div class="stage" id="stage">
+      <canvas id="wideCanvas" width="1920" height="360"></canvas>
+      <div class="overlay">
+        <div class="arc">۲۷۰°</div>
+        <div class="scan"></div>
+      </div>
+      <div class="cam-label left" id="lblL">چپ</div>
+      <div class="cam-label center" id="lblC">وسط</div>
+      <div class="cam-label right" id="lblR">راست</div>
+      <div class="alarm-banner" id="alarmBanner">⚠ نفوذ به منطقه ممنوعه!</div>
+    </div>
+  </section>
+
+  <!-- Everything below the wide view -->
+  <div class="bottomgrid">
+    <section class="panel">
+      <div class="sectiontitle">آمار تشخیص زنده</div>
+      <div class="metrics">
+        <div class="metric"><b id="airCount">۰</b><small>هواپیما</small></div>
+        <div class="metric"><b id="carCount">۰</b><small>خودرو / وسیله</small></div>
+        <div class="metric"><b id="personCount">۰</b><small>انسان</small></div>
+        <div class="metric"><b id="fodCount">۰</b><small>کاندید FOD</small></div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="sectiontitle">تنظیمات تشخیص</div>
+      <div class="statusrow"><label><input type="checkbox" id="togPerson" checked> انسان</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togAirplane" checked> هواپیما</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togVehicle" checked> خودرو / وسیله</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togFod" checked> کاندید FOD</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togLabels" checked> نمایش برچسب</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togBoxes" checked> نمایش کادر</label><b class="ok">●</b></div>
+      <div class="statusrow"><label><input type="checkbox" id="togAudio" checked> هشدار صوتی</label><b class="ok">●</b></div>
+      <div style="padding:8px 12px;font-size:11px;color:#8eb8d0">
+        حداقل اطمینان: <b id="confVal">۳۰٪</b>
+        <input type="range" id="confSlider" min="15" max="70" value="30" style="width:100%;margin-top:4px;accent-color:#00c8ff">
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="sectiontitle">مناطق ممنوعه</div>
+      <div style="padding:6px 12px;font-size:11px;color:#8eb8d0;line-height:1.5">دکمه «رسم منطقه ممنوعه» را بزنید و روی تصویر مستطیل بکشید.</div>
+      <div class="zone-list" id="zoneList">هنوز منطقه‌ای تعریف نشده</div>
+      <div class="statusrow"><span>تعداد مناطق</span><b id="zoneCountSide">۰</b></div>
+      <div class="statusrow"><span>آلارم نفوذ</span><b id="zoneAlarmCount">۰</b></div>
+    </section>
+
+    <section class="panel">
+      <div class="sectiontitle">رویدادهای اخیر</div>
+      <div class="events" id="eventsList">
+        <div class="event"><span>سامانه آماده است — سه منبع را بارگذاری کنید</span><span>—</span></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- گزارش کامل با تاریخ و اسکرین‌شات -->
+  <section class="report-panel" id="reportPanel">
+    <div class="report-header">
+      <h3>📋 گزارش پایش و رویدادها</h3>
+      <div class="report-actions">
+        <button class="btn" id="reportAutoSnap">اسکرین‌شات خودکار: خاموش</button>
+        <button class="btn primary" id="reportManualSnap">📸 ثبت در گزارش</button>
+        <button class="btn" id="reportExport">⬇️ خروجی JSON</button>
+        <button class="btn danger" id="reportClear">🗑 پاک کردن گزارش</button>
+      </div>
+    </div>
+    <div class="report-filters">
+      <label><input type="checkbox" id="rfAll" checked> همه</label>
+      <label><input type="checkbox" id="rfAlarm" checked> آلارم / نفوذ</label>
+      <label><input type="checkbox" id="rfPlane" checked> هواپیما</label>
+      <label><input type="checkbox" id="rfPerson" checked> انسان</label>
+      <label><input type="checkbox" id="rfVehicle" checked> خودرو</label>
+      <label><input type="checkbox" id="rfSnap" checked> اسکرین‌شات</label>
+      <label><input type="checkbox" id="rfInfo" checked> سیستمی</label>
+    </div>
+    <div class="report-body" id="reportBody">
+      <div class="report-empty">هنوز گزارشی ثبت نشده — با شروع پایش و ثبت تصویر، اینجا پر می‌شود.</div>
+    </div>
+    <div class="report-stats">
+      <span>کل رکوردها: <b id="repTotal">۰</b></span>
+      <span>آلارم‌ها: <b id="repAlarms">۰</b></span>
+      <span>اسکرین‌شات‌ها: <b id="repSnaps">۰</b></span>
+      <span>هواپیما: <b id="repPlanes">۰</b></span>
+    </div>
+  </section>
+</main>
+
+<footer>
+  فرودگاه بین‌المللی امام خمینی (ره) • سامانه پایش هوشمند باند • نمای سه‌گانه یکپارچه
+</footer>
+
+<!-- مودال هشدار نفوذ هواپیما -->
+<div class="modal-overlay" id="planeModal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="icon">✈️</span>
+      <h2>هشدار نفوذ هواپیما به منطقه ممنوعه</h2>
+    </div>
+    <div class="modal-body">
+      <p id="modalMsg">یک هواپیما وارد منطقه ممنوعه شده است.</p>
+      <div class="detail">
+        <div><span>شناسه ردیابی</span><b id="modalTrackId">—</b></div>
+        <div><span>منطقه</span><b id="modalZoneId">—</b></div>
+        <div><span>اطمینان تشخیص</span><b id="modalConf">—</b></div>
+        <div><span>زمان</span><b id="modalTime">—</b></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="modalSnapBtn">ثبت تصویر</button>
+      <button class="btn primary" id="modalCloseBtn">تأیید و بستن</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden video elements for 3 cameras -->
+<video id="vidL" playsinline muted loop crossorigin="anonymous" style="display:none"></video>
+<video id="vidC" playsinline muted loop crossorigin="anonymous" style="display:none"></video>
+<video id="vidR" playsinline muted loop crossorigin="anonymous" style="display:none"></video>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3"></script>
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/ort.min.js"></script>
+
+<script>
+const canvas = document.getElementById('wideCanvas');
+const ctx = canvas.getContext('2d');
+const vids = {
+  L: document.getElementById('vidL'),
+  C: document.getElementById('vidC'),
+  R: document.getElementById('vidR')
+};
+const streams = { L: null, C: null, R: null };
+const objectUrls = { L: null, C: null, R: null };
+
+let model = null, model2 = null, yoloSession = null;
+let active = false, raf = null, detecting = false;
+let lastDetectTime = 0;
+const DETECT_INTERVAL = 400;
+let nightMode = false;
+let confMin = 0.30;
+let latestPredictions = []; // predictions in full-canvas coordinates
+let nextTrackId = 1;
+const tracks = [];
+const MAX_HISTORY = 35;
+
+// Zones
+let zones = [];
+let isDrawingZone = false;
+let zoneDrawStart = null;
+let currentZoneDraw = null;
+let zoneAlarmCount = 0;
+let lastZoneAlarmTime = 0;
+const ZONE_ALARM_COOLDOWN = 2500;
+try { zones = JSON.parse(localStorage.getItem('ika_zones_v2') || '[]') || []; } catch(e) { zones = []; }
+
+// ========== گزارش ==========
+const reportLog = []; // { id, ts, dateFa, timeFa, type, title, detail, thumb }
+let reportIdSeq = 1;
+let autoSnapEnabled = false;
+let lastAutoSnapTime = 0;
+const AUTO_SNAP_COOLDOWN = 8000;
+const MAX_REPORT = 200;
+
+function addReport(type, title, detail, withThumb) {
+  const now = new Date();
+  const item = {
+    id: reportIdSeq++,
+    ts: now.getTime(),
+    dateFa: now.toLocaleDateString('fa-IR'),
+    timeFa: now.toLocaleTimeString('fa-IR'),
+    type, // alarm | plane | person | vehicle | snap | info | fod
+    title,
+    detail: detail || '',
+    thumb: null
+  };
+  if (withThumb) {
+    try {
+      item.thumb = canvas.toDataURL('image/jpeg', 0.55);
+    } catch(e) {}
+  }
+  reportLog.unshift(item);
+  if (reportLog.length > MAX_REPORT) {
+    reportLog.length = MAX_REPORT;
+  }
+  renderReport();
+  return item;
+}
+
+function renderReport() {
+  const body = document.getElementById('reportBody');
+  if (!body) return;
+  const filters = {
+    alarm: document.getElementById('rfAlarm')?.checked,
+    plane: document.getElementById('rfPlane')?.checked,
+    person: document.getElementById('rfPerson')?.checked,
+    vehicle: document.getElementById('rfVehicle')?.checked,
+    snap: document.getElementById('rfSnap')?.checked,
+    info: document.getElementById('rfInfo')?.checked,
+    fod: true
+  };
+  const filtered = reportLog.filter(r => {
+    if (r.type === 'alarm') return filters.alarm;
+    if (r.type === 'plane') return filters.plane;
+    if (r.type === 'person') return filters.person;
+    if (r.type === 'vehicle') return filters.vehicle;
+    if (r.type === 'snap') return filters.snap;
+    if (r.type === 'info') return filters.info;
+    if (r.type === 'fod') return filters.alarm;
+    return true;
+  });
+
+  let alarms = 0, snaps = 0, planes = 0;
+  reportLog.forEach(r => {
+    if (r.type === 'alarm' || r.type === 'fod') alarms++;
+    if (r.type === 'snap') snaps++;
+    if (r.type === 'plane') planes++;
+  });
+  document.getElementById('repTotal').textContent = reportLog.length;
+  document.getElementById('repAlarms').textContent = alarms;
+  document.getElementById('repSnaps').textContent = snaps;
+  document.getElementById('repPlanes').textContent = planes;
+
+  if (!filtered.length) {
+    body.innerHTML = '<div class="report-empty">موردی با فیلتر فعلی یافت نشد.</div>';
+    return;
+  }
+  body.innerHTML = filtered.map(r => {
+    const tagClass = {
+      alarm: 'tag-alarm', plane: 'tag-plane', person: 'tag-person',
+      vehicle: 'tag-vehicle', snap: 'tag-snap', info: 'tag-info', fod: 'tag-fod'
+    }[r.type] || 'tag-info';
+    const tagLabel = {
+      alarm: 'آلارم', plane: 'هواپیما', person: 'انسان',
+      vehicle: 'خودرو', snap: 'اسکرین‌شات', info: 'سیستمی', fod: 'FOD'
+    }[r.type] || r.type;
+    const thumbHtml = r.thumb
+      ? `<img class="r-thumb" src="${r.thumb}" alt="snap" onclick="window.open(this.src,'_blank')" title="کلیک برای بزرگ‌نمایی">`
+      : `<div class="r-thumb-placeholder">بدون تصویر</div>`;
+    return `<div class="report-item">
+      <div class="r-time"><b>${r.timeFa}</b>${r.dateFa}</div>
+      <div class="r-body"><span class="tag ${tagClass}">${tagLabel}</span> ${r.title}${r.detail ? '<br><span style="color:#8db4cc">' + r.detail + '</span>' : ''}</div>
+      ${thumbHtml}
+    </div>`;
+  }).join('');
+}
+
+const LABEL_FA = {
+  person:'انسان', bicycle:'دوچرخه', car:'خودرو', motorcycle:'موتور', airplane:'هواپیما',
+  bus:'اتوبوس', train:'قطار', truck:'کامیون', boat:'قایق', bird:'پرنده',
+  backpack:'کوله', umbrella:'چتر', handbag:'کیف', suitcase:'چمدان',
+  bottle:'بطری', cup:'فنجان', knife:'چاقو', spoon:'قاشق', chair:'صندلی',
+  'cell phone':'موبایل', book:'کتاب', clock:'ساعت', scissors:'قیچی'
+};
+const VEHICLE_CLASSES = new Set(['car','truck','bus','motorcycle','bicycle']);
+const FOD_CANDIDATE = new Set(['bottle','cup','knife','spoon','backpack','handbag','suitcase','umbrella','book','cell phone','scissors']);
+const COCO_NAMES = [
+  'person','bicycle','car','motorcycle','airplane','bus','train','truck','boat','traffic light',
+  'fire hydrant','stop sign','parking meter','bench','bird','cat','dog','horse','sheep','cow',
+  'elephant','bear','zebra','giraffe','backpack','umbrella','handbag','tie','suitcase','frisbee',
+  'skis','snowboard','sports ball','kite','baseball bat','baseball glove','skateboard','surfboard',
+  'tennis racket','bottle','wine glass','cup','fork','knife','spoon','bowl','banana','apple',
+  'sandwich','orange','broccoli','carrot','hot dog','pizza','donut','cake','chair','couch',
+  'potted plant','bed','dining table','toilet','tv','laptop','mouse','remote','keyboard','cell phone',
+  'microwave','oven','toaster','sink','refrigerator','book','clock','vase','scissors','teddy bear',
+  'hair drier','toothbrush'
+];
+
+function clock() {
+  const el = document.getElementById('clock');
+  if (el) el.textContent = new Date().toLocaleTimeString('fa-IR');
+}
+setInterval(clock, 1000); clock();
+
+function addEvent(text, type = '') {
+  const list = document.getElementById('eventsList');
+  if (!list) return;
+  const t = new Date().toLocaleTimeString('fa-IR');
+  const div = document.createElement('div');
+  div.className = 'event ' + type;
+  div.innerHTML = `<span>${text}</span><span>${t}</span>`;
+  list.prepend(div);
+  while (list.children.length > 40) list.lastChild.remove();
+}
+
+function getToggles() {
+  return {
+    person: document.getElementById('togPerson')?.checked,
+    airplane: document.getElementById('togAirplane')?.checked,
+    vehicle: document.getElementById('togVehicle')?.checked,
+    fod: document.getElementById('togFod')?.checked,
+    labels: document.getElementById('togLabels')?.checked,
+    boxes: document.getElementById('togBoxes')?.checked,
+    audio: document.getElementById('togAudio')?.checked
+  };
+}
+
+function playAlertBeep() {
+  try {
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.connect(gain); gain.connect(actx.destination);
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(900, actx.currentTime);
+    osc.frequency.setValueAtTime(600, actx.currentTime + 0.12);
+    osc.frequency.setValueAtTime(900, actx.currentTime + 0.24);
+    gain.gain.setValueAtTime(0.25, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, actx.currentTime + 0.5);
+    osc.start(); osc.stop(actx.currentTime + 0.5);
+  } catch(e) {}
+}
+
+function setCamStatus(key, on, label) {
+  const el = document.getElementById('st' + key);
+  if (!el) return;
+  el.textContent = on ? (label || 'فعال') : 'بدون منبع';
+  el.className = 'status-cam ' + (on ? 'on' : 'off');
+}
+
+// ========== Source management ==========
+function stopCam(key) {
+  if (streams[key]) { streams[key].getTracks().forEach(t => t.stop()); streams[key] = null; }
+  const v = vids[key];
+  v.pause(); v.removeAttribute('src'); v.srcObject = null;
+  if (objectUrls[key]) { URL.revokeObjectURL(objectUrls[key]); objectUrls[key] = null; }
+  setCamStatus(key, false);
+}
+
+async function loadFile(key, file) {
+  stopCam(key);
+  objectUrls[key] = URL.createObjectURL(file);
+  const v = vids[key];
+  v.src = objectUrls[key];
+  v.loop = true;
+  await v.play();
+  setCamStatus(key, true, file.name.slice(0, 18));
+  addEvent('دوربین ' + key + ': ' + file.name, 'good');
+  updateSourceInfo();
+}
+
+async function loadWebcam(key) {
+  try {
+    stopCam(key);
+    streams[key] = await navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false
+    });
+    vids[key].srcObject = streams[key];
+    await vids[key].play();
+    setCamStatus(key, true, 'وب‌کم');
+    addEvent('دوربین ' + key + ': وب‌کم', 'good');
+    updateSourceInfo();
+  } catch(e) { alert('وب‌کم ' + key + ': ' + e.message); }
+}
+
+async function loadScreen(key) {
+  try {
+    stopCam(key);
+    streams[key] = await navigator.mediaDevices.getDisplayMedia({
+      video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false
+    });
+    streams[key].getVideoTracks()[0].onended = () => stopCam(key);
+    vids[key].srcObject = streams[key];
+    await vids[key].play();
+    setCamStatus(key, true, 'اشتراک صفحه');
+    addEvent('دوربین ' + key + ': اشتراک صفحه', 'good');
+    updateSourceInfo();
+  } catch(e) {
+    if (e.name !== 'NotAllowedError') alert('اشتراک ' + key + ': ' + e.message);
+  }
+}
+
+function updateSourceInfo() {
+  const parts = ['L','C','R'].map(k => {
+    const v = vids[k];
+    return (v.srcObject || v.src) ? k + '✓' : k + '✗';
+  });
+  const activeCount = ['L','C','R'].filter(k => vids[k].srcObject || vids[k].src).length;
+  document.getElementById('sourceInfo').textContent = 'وضعیت منابع: ' + parts.join('  |  ') + '  —  ویدیوها بدون فاصله کنار هم رسم می‌شوند';
+  const sum = document.getElementById('camPanelSummary');
+  if (sum) sum.textContent = activeCount ? (activeCount + ' منبع فعال') : 'بدون منبع';
+}
+
+// Wire up 3 camera controls
+['L','C','R'].forEach(key => {
+  document.getElementById('file' + key).addEventListener('change', e => {
+    if (e.target.files[0]) loadFile(key, e.target.files[0]);
+  });
+  document.getElementById('webcam' + key).addEventListener('click', () => loadWebcam(key));
+  document.getElementById('screen' + key).addEventListener('click', () => loadScreen(key));
+  document.getElementById('clear' + key).addEventListener('click', () => {
+    stopCam(key); updateSourceInfo();
+  });
+});
+
+// ========== Drawing the seamless triple view ==========
+function drawVideoCover(video, x, y, dw, dh, filter) {
+  if (!video || video.readyState < 2 || !video.videoWidth) {
+    ctx.fillStyle = '#0a1520';
+    ctx.fillRect(x, y, dw, dh);
+    ctx.fillStyle = '#3a5a70';
+    ctx.font = '14px Tahoma';
+    ctx.textAlign = 'center';
+    ctx.fillText('بدون تصویر', x + dw/2, y + dh/2);
+    return;
+  }
+  ctx.save();
+  if (filter) ctx.filter = filter;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  const scale = Math.max(dw / vw, dh / vh);
+  const sw = dw / scale, sh = dh / scale;
+  const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+  ctx.drawImage(video, sx, sy, sw, sh, x, y, dw, dh);
+  ctx.restore();
+}
+
+function drawFrame() {
+  if (!active) return;
+  const w = canvas.width, h = canvas.height;
+  const third = w / 3;
+
+  ctx.fillStyle = '#020b17';
+  ctx.fillRect(0, 0, w, h);
+
+  // Seamless: left | center | right  — NO gaps
+  const fL = nightMode ? 'grayscale(1) contrast(1.35) brightness(0.85)' : 'grayscale(0.15) contrast(1.1)';
+  const fC = nightMode ? 'grayscale(0.6) contrast(1.25) brightness(0.9)' : 'saturate(1.1) contrast(1.05)';
+  const fR = nightMode ? 'hue-rotate(200deg) saturate(1.5) contrast(1.3) brightness(0.8)' : 'saturate(1.05) contrast(1.08)';
+
+  drawVideoCover(vids.L, 0, 0, third, h, fL);
+  drawVideoCover(vids.C, third, 0, third, h, fC);
+  drawVideoCover(vids.R, third * 2, 0, third, h, fR);
+
+  // Very subtle divider lines (almost invisible for seamless feel)
+  ctx.strokeStyle = 'rgba(0,200,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(third, 0); ctx.lineTo(third, h); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(third * 2, 0); ctx.lineTo(third * 2, h); ctx.stroke();
+
+  // Draw zones
+  drawZones();
+
+  // Draw detections
+  drawPredictions();
+
+  // Run detection periodically
+  runDetection();
+
+  raf = requestAnimationFrame(drawFrame);
+}
+
+// ========== Zones ==========
+function saveZones() {
+  try { localStorage.setItem('ika_zones_v2', JSON.stringify(zones)); } catch(e) {}
+}
+function updateZoneUI() {
+  const el = document.getElementById('zoneList');
+  const cnt = document.getElementById('zoneCountSide');
+  if (cnt) cnt.textContent = zones.length;
+  if (!el) return;
+  if (!zones.length) { el.textContent = 'هنوز منطقه‌ای تعریف نشده'; return; }
+  el.innerHTML = zones.map(z => `
+    <div class="zone-item">
+      <span>منطقه #${z.id} (${Math.round(z.w)}×${Math.round(z.h)})</span>
+      <button onclick="removeZone(${z.id})">حذف</button>
+    </div>`).join('');
+}
+window.removeZone = function(id) {
+  zones = zones.filter(z => z.id !== id);
+  saveZones(); updateZoneUI();
+  addEvent('منطقه #' + id + ' حذف شد', 'warn');
+};
+
+function drawZones() {
+  zones.forEach(z => {
+    ctx.fillStyle = 'rgba(255,76,85,0.16)';
+    ctx.strokeStyle = '#ff4c55';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([7, 4]);
+    ctx.fillRect(z.x, z.y, z.w, z.h);
+    ctx.strokeRect(z.x, z.y, z.w, z.h);
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#ff4c55';
+    ctx.font = 'bold 12px Tahoma';
+    ctx.textAlign = 'right';
+    ctx.fillText('ممنوعه #' + z.id, z.x + z.w - 6, z.y + 15);
+  });
+  if (currentZoneDraw) {
+    ctx.fillStyle = 'rgba(0,200,255,0.12)';
+    ctx.strokeStyle = '#00c8ff';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 3]);
+    ctx.fillRect(currentZoneDraw.x, currentZoneDraw.y, currentZoneDraw.w, currentZoneDraw.h);
+    ctx.strokeRect(currentZoneDraw.x, currentZoneDraw.y, currentZoneDraw.w, currentZoneDraw.h);
+    ctx.setLineDash([]);
+  }
+}
+
+function boxIntersectsZone(bx, by, bw, bh, zone) {
+  return !(bx + bw < zone.x || bx > zone.x + zone.w || by + bh < zone.y || by > zone.y + zone.h);
+}
+
+function showPlaneModal(p, zoneId) {
+  const modal = document.getElementById('planeModal');
+  if (!modal) return;
+  document.getElementById('modalMsg').textContent =
+    'هواپیما وارد منطقه ممنوعه #' + zoneId + ' شده است. فوراً بررسی کنید.';
+  document.getElementById('modalTrackId').textContent = p.trackId ? '#' + p.trackId : '—';
+  document.getElementById('modalZoneId').textContent = '#' + zoneId;
+  document.getElementById('modalConf').textContent = Math.round((p.score || 0) * 100) + '٪';
+  document.getElementById('modalTime').textContent = new Date().toLocaleString('fa-IR');
+  modal.classList.add('show');
+}
+function closePlaneModal() {
+  document.getElementById('planeModal')?.classList.remove('show');
+}
+
+function checkZoneIntrusions(preds) {
+  if (!zones.length) {
+    document.getElementById('alarmBanner')?.classList.remove('show');
+    return;
+  }
+  let intrusion = false, label = '';
+  const now = Date.now();
+  preds.forEach(p => {
+    zones.forEach(z => {
+      if (boxIntersectsZone(p.bx, p.by, p.bw, p.bh, z)) {
+        intrusion = true;
+        label = (LABEL_FA[p.class] || p.class) + (p.trackId ? ' #' + p.trackId : '');
+        if (now - lastZoneAlarmTime > ZONE_ALARM_COOLDOWN) {
+          lastZoneAlarmTime = now;
+          zoneAlarmCount++;
+          document.getElementById('zoneAlarmCount').textContent = zoneAlarmCount;
+          if (getToggles().audio) playAlertBeep();
+          addEvent('⚠ نفوذ منطقه #' + z.id + ': ' + label, 'bad');
+          // ثبت در گزارش با اسکرین‌شات
+          const rType = p.class === 'airplane' ? 'plane' : (p.class === 'person' ? 'person' : (VEHICLE_CLASSES.has(p.class) ? 'vehicle' : 'alarm'));
+          addReport(rType === 'plane' ? 'plane' : 'alarm',
+            'نفوذ به منطقه ممنوعه #' + z.id + ': ' + label,
+            'اطمینان: ' + Math.round((p.score || 0) * 100) + '٪',
+            true);
+          // مودال مخصوص هواپیما
+          if (p.class === 'airplane') {
+            showPlaneModal(p, z.id);
+          }
+        }
+      }
+    });
+  });
+  const banner = document.getElementById('alarmBanner');
+  if (banner) {
+    if (intrusion) { banner.classList.add('show'); banner.textContent = '⚠ نفوذ: ' + label; }
+    else banner.classList.remove('show');
+  }
+}
+
+// Zone drawing interaction
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) * (canvas.width / rect.width),
+    y: (e.clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+document.getElementById('drawZoneBtn').addEventListener('click', () => {
+  isDrawingZone = !isDrawingZone;
+  const btn = document.getElementById('drawZoneBtn');
+  btn.classList.toggle('active', isDrawingZone);
+  btn.textContent = isDrawingZone ? '✖ انصراف' : 'رسم منطقه ممنوعه';
+  canvas.style.cursor = isDrawingZone ? 'crosshair' : 'default';
+});
+document.getElementById('clearZonesBtn').addEventListener('click', () => {
+  zones = []; saveZones(); updateZoneUI();
+  addEvent('همه مناطق پاک شدند', 'warn');
+});
+canvas.addEventListener('mousedown', e => {
+  if (!isDrawingZone) return;
+  const pos = getCanvasPos(e);
+  zoneDrawStart = pos;
+  currentZoneDraw = { x: pos.x, y: pos.y, w: 0, h: 0 };
+});
+canvas.addEventListener('mousemove', e => {
+  if (!isDrawingZone || !zoneDrawStart) return;
+  const pos = getCanvasPos(e);
+  currentZoneDraw = {
+    x: Math.min(zoneDrawStart.x, pos.x), y: Math.min(zoneDrawStart.y, pos.y),
+    w: Math.abs(pos.x - zoneDrawStart.x), h: Math.abs(pos.y - zoneDrawStart.y)
+  };
+});
+canvas.addEventListener('mouseup', () => {
+  if (!isDrawingZone || !currentZoneDraw || currentZoneDraw.w < 12 || currentZoneDraw.h < 12) {
+    currentZoneDraw = null; zoneDrawStart = null; return;
+  }
+  const id = (zones.length ? Math.max(...zones.map(z => z.id)) : 0) + 1;
+  zones.push({ id, ...currentZoneDraw });
+  currentZoneDraw = null; zoneDrawStart = null; isDrawingZone = false;
+  document.getElementById('drawZoneBtn').classList.remove('active');
+  document.getElementById('drawZoneBtn').textContent = 'رسم منطقه ممنوعه';
+  canvas.style.cursor = 'default';
+  saveZones(); updateZoneUI();
+  addEvent('منطقه ممنوعه #' + id + ' اضافه شد', 'good');
+});
+
+// ========== Detection ==========
+function getThresh(cls) {
+  if (cls === 'airplane') return Math.max(0.20, confMin - 0.05);
+  if (cls === 'person') return confMin;
+  if (VEHICLE_CLASSES.has(cls)) return Math.max(0.18, confMin - 0.02);
+  if (FOD_CANDIDATE.has(cls)) return Math.max(0.15, confMin - 0.05);
+  return confMin;
+}
+
+function iou(a, b) {
+  const x1 = Math.max(a[0], b[0]), y1 = Math.max(a[1], b[1]);
+  const x2 = Math.min(a[0]+a[2], b[0]+b[2]), y2 = Math.min(a[1]+a[3], b[1]+b[3]);
+  const inter = Math.max(0, x2-x1) * Math.max(0, y2-y1);
+  const uni = a[2]*a[3] + b[2]*b[3] - inter;
+  return uni > 0 ? inter / uni : 0;
+}
+
+function updateTracking(preds) {
+  const now = performance.now();
+  preds.forEach(p => { p.matched = false; });
+  tracks.forEach(t => {
+    let best = 0.28, bestP = null;
+    preds.forEach(p => {
+      if (p.matched || p.class !== t.cls) return;
+      const score = iou([t.bx, t.by, t.bw, t.bh], [p.bx, p.by, p.bw, p.bh]);
+      if (score > best) { best = score; bestP = p; }
+    });
+    if (bestP) {
+      bestP.matched = true;
+      bestP.trackId = t.id;
+      t.bx = bestP.bx; t.by = bestP.by; t.bw = bestP.bw; t.bh = bestP.bh;
+      t.lastSeen = now; t.hits++;
+      t.history.push({ x: t.bx + t.bw/2, y: t.by + t.bh/2, t: now });
+      if (t.history.length > MAX_HISTORY) t.history.shift();
+    }
+  });
+  // remove old
+  for (let i = tracks.length - 1; i >= 0; i--) {
+    if (now - tracks[i].lastSeen > 2000) tracks.splice(i, 1);
+  }
+  // new tracks
+  preds.forEach(p => {
+    if (p.matched) return;
+    const id = nextTrackId++;
+    p.trackId = id;
+    tracks.push({
+      id, cls: p.class, bx: p.bx, by: p.by, bw: p.bw, bh: p.bh,
+      firstSeen: now, lastSeen: now, hits: 1,
+      history: [{ x: p.bx + p.bw/2, y: p.by + p.bh/2, t: now }]
+    });
+  });
+}
+
+function updateCounts(preds) {
+  let air = 0, car = 0, person = 0, fod = 0;
+  preds.forEach(p => {
+    if (p.class === 'airplane') air++;
+    else if (p.class === 'person') person++;
+    else if (VEHICLE_CLASSES.has(p.class)) car++;
+    else if (FOD_CANDIDATE.has(p.class)) fod++;
+  });
+  document.getElementById('airCount').textContent = air;
+  document.getElementById('carCount').textContent = car;
+  document.getElementById('personCount').textContent = person;
+  document.getElementById('fodCount').textContent = fod;
+}
+
+function getBoxColor(cls) {
+  if (cls === 'airplane') return '#00d4ff';
+  if (cls === 'person') return '#ff6b9d';
+  if (VEHICLE_CLASSES.has(cls)) return '#ffbf35';
+  if (FOD_CANDIDATE.has(cls)) return '#ff4c55';
+  return '#a0c4e0';
+}
+
+function drawPredictions() {
+  const tog = getToggles();
+  if (!tog.boxes && !tog.labels) return;
+  latestPredictions.forEach(p => {
+    const color = getBoxColor(p.class);
+    if (tog.boxes) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p.bx, p.by, p.bw, p.bh);
+    }
+    if (tog.labels) {
+      const label = (LABEL_FA[p.class] || p.class) + (p.trackId ? ' #' + p.trackId : '') + ' ' + Math.round(p.score * 100) + '%';
+      ctx.font = 'bold 11px Tahoma';
+      const tw = ctx.measureText(label).width + 8;
+      ctx.fillStyle = color;
+      ctx.fillRect(p.bx, Math.max(0, p.by - 18), tw, 17);
+      ctx.fillStyle = '#021018';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, p.bx + tw - 4, Math.max(12, p.by - 5));
+    }
+  });
+}
+
+// Map detection from a third-panel video onto full canvas coordinates
+function mapPredsToCanvas(preds, panelIndex) {
+  // panelIndex 0=L, 1=C, 2=R
+  const w = canvas.width, h = canvas.height;
+  const third = w / 3;
+  const offsetX = panelIndex * third;
+  const results = [];
+  // We detect on the composite canvas region conceptually;
+  // For simplicity detect on center video and also try each active video.
+  return results;
+}
+
+async function detectOnVideo(video, panelIndex) {
+  if (!video || video.readyState < 2 || !video.videoWidth) return [];
+  if (!model && !yoloSession) return [];
+  const mode = document.getElementById('modelMode')?.value || 'yolo_coco';
+  const tog = getToggles();
+  let raw = [];
+
+  try {
+    if (mode === 'yolo' && yoloSession) {
+      raw = await detectYOLO(video);
+    } else if (mode === 'yolo_coco') {
+      const tasks = [];
+      if (yoloSession) tasks.push(detectYOLO(video));
+      if (model) tasks.push(model.detect(video, 20, 0.15));
+      const parts = await Promise.all(tasks);
+      raw = mergeDetections(parts);
+    } else {
+      if (model) raw = await model.detect(video, 20, 0.15);
+      if (mode === 'dual' && model2) {
+        const r2 = await model2.detect(video, 20, 0.15);
+        raw = mergeDetections([raw, r2]);
+      }
+    }
+  } catch(e) { console.warn(e); return []; }
+
+  const w = canvas.width, h = canvas.height;
+  const third = w / 3;
+  const offsetX = panelIndex * third;
+  const vw = video.videoWidth, vh = video.videoHeight;
+  // cover scale
+  const scale = Math.max(third / vw, h / vh);
+  const sw = third / scale, sh = h / scale;
+  const sx = (vw - sw) / 2, sy = (vh - sh) / 2;
+
+  return raw.filter(p => {
+    const th = getThresh(p.class);
+    if (p.class === 'person') return tog.person && p.score >= th;
+    if (p.class === 'airplane') return tog.airplane && p.score >= th;
+    if (VEHICLE_CLASSES.has(p.class)) return tog.vehicle && p.score >= th;
+    if (FOD_CANDIDATE.has(p.class)) return tog.fod && p.score >= th;
+    return false;
+  }).map(p => {
+    // Map bbox from video coords → panel cover coords → full canvas
+    const [x, y, bw, bh] = p.bbox;
+    // relative to the cropped cover region
+    const fx = (x - sx) * scale;
+    const fy = (y - sy) * scale;
+    const fw = bw * scale;
+    const fh = bh * scale;
+    return {
+      class: p.class,
+      score: p.score,
+      bx: offsetX + fx,
+      by: fy,
+      bw: fw,
+      bh: fh
+    };
+  }).filter(p => p.bw > 4 && p.bh > 4 && p.bx + p.bw > offsetX - 10 && p.bx < offsetX + third + 10);
+}
+
+function mergeDetections(lists, iouThr = 0.45) {
+  const all = [];
+  lists.forEach(arr => (arr || []).forEach(p => all.push({ class: p.class, score: p.score, bbox: p.bbox.slice() })));
+  all.sort((a, b) => b.score - a.score);
+  const kept = [];
+  all.forEach(p => {
+    let overlap = false;
+    for (const k of kept) {
+      if (k.class !== p.class) continue;
+      const [x,y,w,h] = p.bbox, [kx,ky,kw,kh] = k.bbox;
+      const ix = Math.max(0, Math.min(x+w, kx+kw) - Math.max(x, kx));
+      const iy = Math.max(0, Math.min(y+h, ky+kh) - Math.max(y, ky));
+      const inter = ix * iy, uni = w*h + kw*kh - inter;
+      if (uni > 0 && inter / uni > iouThr) { overlap = true; break; }
+    }
+    if (!overlap) kept.push(p);
+  });
+  return kept;
+}
+
+// YOLO helpers (simplified from original)
+const YOLO_INPUT = 640;
+function letterbox(source, size) {
+  const sw = source.videoWidth || source.width;
+  const sh = source.videoHeight || source.height;
+  const scale = Math.min(size / sw, size / sh);
+  const nw = Math.round(sw * scale), nh = Math.round(sh * scale);
+  const dx = Math.floor((size - nw) / 2), dy = Math.floor((size - nh) / 2);
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  const cx = c.getContext('2d');
+  cx.fillStyle = '#114'; cx.fillRect(0, 0, size, size);
+  cx.drawImage(source, 0, 0, sw, sh, dx, dy, nw, nh);
+  return { canvas: c, scale, dx, dy, sw, sh };
+}
+function yoloNMS(boxes, scores, classes, iouThr) {
+  const idx = scores.map((s, i) => i).sort((a, b) => scores[b] - scores[a]);
+  const keep = [], active = new Array(idx.length).fill(true);
+  for (let i = 0; i < idx.length; i++) {
+    if (!active[i]) continue;
+    keep.push(idx[i]);
+    const a = boxes[idx[i]];
+    for (let j = i + 1; j < idx.length; j++) {
+      if (!active[j] || classes[idx[i]] !== classes[idx[j]]) continue;
+      const b = boxes[idx[j]];
+      const ix = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0]));
+      const iy = Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
+      const inter = ix * iy;
+      const uni = (a[2]-a[0])*(a[3]-a[1]) + (b[2]-b[0])*(b[3]-b[1]) - inter;
+      if (uni > 0 && inter / uni > iouThr) active[j] = false;
+    }
+  }
+  return keep;
+}
+async function detectYOLO(videoEl) {
+  if (!yoloSession) return [];
+  const { canvas: lb, scale, dx, dy, sw, sh } = letterbox(videoEl, YOLO_INPUT);
+  const input = tf.tidy(() => {
+    const img = tf.browser.fromPixels(lb).toFloat().div(255);
+    return img.expandDims(0);
+  });
+  const tensor = await input.data();
+  input.dispose();
+  const feeds = {};
+  const inputName = yoloSession.inputNames[0];
+  feeds[inputName] = new ort.Tensor('float32', tensor, [1, YOLO_INPUT, YOLO_INPUT, 3]);
+  // Some YOLO exports are NCHW
+  try {
+    const out = await yoloSession.run(feeds);
+    const outName = yoloSession.outputNames[0];
+    const data = out[outName].data;
+    const dims = out[outName].dims;
+    // YOLOv8 output typically [1, 84, 8400] or [1, 8400, 84]
+    let numCls = 80, numPred;
+    let transposed = false;
+    if (dims.length === 3) {
+      if (dims[1] < dims[2]) { numCls = dims[1] - 4; numPred = dims[2]; transposed = true; }
+      else { numCls = dims[2] - 4; numPred = dims[1]; }
+    }
+    const boxes = [], scores = [], classes = [];
+    for (let i = 0; i < numPred; i++) {
+      let maxS = 0, maxC = 0;
+      for (let c = 0; c < Math.min(numCls, 80); c++) {
+        const s = transposed ? data[(4 + c) * numPred + i] : data[i * (numCls + 4) + 4 + c];
+        if (s > maxS) { maxS = s; maxC = c; }
+      }
+      if (maxS < 0.2) continue;
+      let cx, cy, bw, bh;
+      if (transposed) {
+        cx = data[0 * numPred + i]; cy = data[1 * numPred + i];
+        bw = data[2 * numPred + i]; bh = data[3 * numPred + i];
+      } else {
+        cx = data[i * (numCls + 4)]; cy = data[i * (numCls + 4) + 1];
+        bw = data[i * (numCls + 4) + 2]; bh = data[i * (numCls + 4) + 3];
+      }
+      const x1 = (cx - bw / 2 - dx) / scale;
+      const y1 = (cy - bh / 2 - dy) / scale;
+      const w = bw / scale, h = bh / scale;
+      boxes.push([x1, y1, x1 + w, y1 + h]);
+      scores.push(maxS);
+      classes.push(maxC);
+    }
+    const keep = yoloNMS(boxes, scores, classes, 0.45);
+    return keep.map(i => ({
+      class: COCO_NAMES[classes[i]] || 'object',
+      score: scores[i],
+      bbox: [boxes[i][0], boxes[i][1], boxes[i][2] - boxes[i][0], boxes[i][3] - boxes[i][1]]
+    }));
+  } catch(e) {
+    // Try NCHW format
+    try {
+      const img2 = tf.tidy(() => tf.browser.fromPixels(lb).toFloat().div(255).transpose([2,0,1]).expandDims(0));
+      const t2 = await img2.data(); img2.dispose();
+      feeds[inputName] = new ort.Tensor('float32', t2, [1, 3, YOLO_INPUT, YOLO_INPUT]);
+      const out = await yoloSession.run(feeds);
+      // simplified fallback empty
+      return [];
+    } catch(e2) { return []; }
+  }
+}
+
+async function loadYOLO() {
+  const paths = ['./yolov8-model/yolov8n.onnx', './yolov8n.onnx', 'yolov8n.onnx'];
+  for (const p of paths) {
+    try {
+      yoloSession = await ort.InferenceSession.create(p, { executionProviders: ['wasm'] });
+      return p;
+    } catch(e) {}
+  }
+  throw new Error('yolov8n.onnx not found');
+}
+
+async function runDetection() {
+  if (!active || detecting) return;
+  if (Date.now() - lastDetectTime < DETECT_INTERVAL) return;
+  if (!model && !yoloSession) return;
+  detecting = true;
+  lastDetectTime = Date.now();
+  try {
+    // Detect on each active camera panel in parallel
+    const tasks = [];
+    if (vids.L.readyState >= 2) tasks.push(detectOnVideo(vids.L, 0));
+    else tasks.push(Promise.resolve([]));
+    if (vids.C.readyState >= 2) tasks.push(detectOnVideo(vids.C, 1));
+    else tasks.push(Promise.resolve([]));
+    if (vids.R.readyState >= 2) tasks.push(detectOnVideo(vids.R, 2));
+    else tasks.push(Promise.resolve([]));
+
+    const [pL, pC, pR] = await Promise.all(tasks);
+    const all = [...pL, ...pC, ...pR];
+
+    updateTracking(all);
+    latestPredictions = all;
+    updateCounts(all);
+    checkZoneIntrusions(all);
+
+    // اسکرین‌شات خودکار هنگام دیدن هواپیما (اگر روشن باشد)
+    if (autoSnapEnabled) {
+      const now = Date.now();
+      const hasPlane = all.some(p => p.class === 'airplane');
+      if (hasPlane && now - lastAutoSnapTime > AUTO_SNAP_COOLDOWN) {
+        lastAutoSnapTime = now;
+        const p = all.find(x => x.class === 'airplane');
+        addReport('plane', 'تشخیص هواپیما (خودکار)',
+          'اطمینان: ' + Math.round((p?.score || 0) * 100) + '٪' + (p?.trackId ? ' | ID #' + p.trackId : ''),
+          true);
+      }
+    }
+  } catch(e) {
+    console.warn('detect error', e);
+  }
+  detecting = false;
+}
+
+// ========== Model loading ==========
+async function loadModel() {
+  const statusEl = document.getElementById('modelStatus');
+  statusEl.textContent = 'بارگذاری مدل...';
+  statusEl.className = 'model-status loading';
+  let loaded = 0;
+  try {
+    model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
+    loaded++;
+    addEvent('موتور COCO-SSD آماده', 'good');
+  } catch(e) {
+    statusEl.textContent = 'خطا در مدل اصلی';
+    statusEl.className = 'model-status error';
+    addEvent('مدل اصلی بارگذاری نشد', 'bad');
+    return;
+  }
+  try {
+    model2 = await cocoSsd.load({ base: 'mobilenet_v2' });
+    loaded++;
+    addEvent('موتور دوم آماده', 'good');
+  } catch(e) {}
+  try {
+    const path = await loadYOLO();
+    loaded++;
+    addEvent('YOLOv8 آماده: ' + path, 'good');
+  } catch(e) {
+    addEvent('YOLOv8 یافت نشد (اختیاری) — از COCO استفاده می‌شود', 'warn');
+  }
+  statusEl.textContent = loaded + ' موتور آماده' + (yoloSession ? ' • YOLO' : '');
+  statusEl.className = 'model-status ready';
+}
+loadModel();
+
+// ========== Controls ==========
+document.getElementById('startBtn').addEventListener('click', () => {
+  active = true;
+  document.getElementById('liveLabel').textContent = '● پایش زنده';
+  document.getElementById('liveLabel').className = 'good';
+  if (raf) cancelAnimationFrame(raf);
+  drawFrame();
+  addEvent('پایش شروع شد', 'good');
+  addReport('info', 'پایش شروع شد', '', false);
+});
+document.getElementById('stopBtn').addEventListener('click', () => {
+  active = false;
+  if (raf) cancelAnimationFrame(raf);
+  document.getElementById('liveLabel').textContent = '● متوقف';
+  document.getElementById('alarmBanner')?.classList.remove('show');
+  addEvent('پایش متوقف شد', 'warn');
+  addReport('info', 'پایش متوقف شد', '', false);
+});
+document.getElementById('dayNightBtn').addEventListener('click', () => {
+  nightMode = !nightMode;
+  document.getElementById('dayNightBtn').textContent = nightMode ? 'حالت روز' : 'حالت شب';
+});
+document.getElementById('fullscreenBtn').addEventListener('click', () => {
+  const el = document.getElementById('stage');
+  if (el.requestFullscreen) el.requestFullscreen();
+});
+document.getElementById('snapBtn').addEventListener('click', () => {
+  try {
+    const a = document.createElement('a');
+    a.download = 'airport_' + Date.now() + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    addEvent('تصویر ذخیره شد', 'good');
+    addReport('snap', 'اسکرین‌شات دستی ذخیره شد', '', true);
+  } catch(e) {}
+});
+document.getElementById('confSlider').addEventListener('input', e => {
+  confMin = e.target.value / 100;
+  document.getElementById('confVal').textContent = e.target.value + '٪';
+});
+
+// مودال هواپیما
+document.getElementById('modalCloseBtn')?.addEventListener('click', closePlaneModal);
+document.getElementById('planeModal')?.addEventListener('click', e => {
+  if (e.target.id === 'planeModal') closePlaneModal();
+});
+document.getElementById('modalSnapBtn')?.addEventListener('click', () => {
+  try {
+    const a = document.createElement('a');
+    a.download = 'plane_zone_alert_' + Date.now() + '.png';
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    addEvent('تصویر هشدار هواپیما ذخیره شد', 'good');
+    addReport('snap', 'اسکرین‌شات از مودال هشدار هواپیما', '', true);
+  } catch(e) {}
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePlaneModal();
+});
+
+// گزارش — کنترل‌ها
+document.getElementById('reportManualSnap')?.addEventListener('click', () => {
+  addReport('snap', 'ثبت دستی در گزارش', 'از نوار گزارش', true);
+  addEvent('در گزارش ثبت شد', 'good');
+});
+document.getElementById('reportAutoSnap')?.addEventListener('click', () => {
+  autoSnapEnabled = !autoSnapEnabled;
+  const btn = document.getElementById('reportAutoSnap');
+  if (btn) {
+    btn.textContent = autoSnapEnabled ? 'اسکرین‌شات خودکار: روشن' : 'اسکرین‌شات خودکار: خاموش';
+    btn.style.borderColor = autoSnapEnabled ? '#20e58a' : '';
+  }
+  addReport('info', autoSnapEnabled ? 'اسکرین‌شات خودکار فعال شد' : 'اسکرین‌شات خودکار خاموش شد', '', false);
+});
+document.getElementById('reportClear')?.addEventListener('click', () => {
+  if (!reportLog.length) return;
+  if (!confirm('همه گزارش‌ها پاک شوند؟')) return;
+  reportLog.length = 0;
+  renderReport();
+  addEvent('گزارش پاک شد', 'warn');
+});
+document.getElementById('reportExport')?.addEventListener('click', () => {
+  const data = reportLog.map(r => ({
+    id: r.id, date: r.dateFa, time: r.timeFa, type: r.type,
+    title: r.title, detail: r.detail, hasImage: !!r.thumb
+  }));
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'airport_report_' + Date.now() + '.json';
+  a.click();
+  addEvent('خروجی گزارش دانلود شد', 'good');
+});
+['rfAll','rfAlarm','rfPlane','rfPerson','rfVehicle','rfSnap','rfInfo'].forEach(id => {
+  document.getElementById(id)?.addEventListener('change', () => {
+    if (id === 'rfAll') {
+      const on = document.getElementById('rfAll').checked;
+      ['rfAlarm','rfPlane','rfPerson','rfVehicle','rfSnap','rfInfo'].forEach(fid => {
+        const el = document.getElementById(fid);
+        if (el) el.checked = on;
+      });
+    }
+    renderReport();
+  });
+});
+
+// باز/بسته کردن پنل دوربین‌ها
+document.getElementById('camPanelToggle')?.addEventListener('click', () => {
+  const panel = document.getElementById('camPanel');
+  if (!panel) return;
+  panel.classList.toggle('collapsed');
+  document.body.classList.toggle('cams-collapsed', panel.classList.contains('collapsed'));
+  try {
+    localStorage.setItem('ika_cam_panel_collapsed', panel.classList.contains('collapsed') ? '1' : '0');
+  } catch(e) {}
+});
+// بازیابی وضعیت قبلی پنل
+try {
+  if (localStorage.getItem('ika_cam_panel_collapsed') === '1') {
+    document.getElementById('camPanel')?.classList.add('collapsed');
+    document.body.classList.add('cams-collapsed');
+  }
+} catch(e) {}
+
+updateZoneUI();
+updateSourceInfo();
+renderReport();
+addReport('info', 'سامانه آماده است', 'گزارش پایش از این لحظه فعال است', false);
+</script>
+</body>
+</html>
